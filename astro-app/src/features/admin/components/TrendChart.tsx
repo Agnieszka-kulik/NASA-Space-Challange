@@ -53,16 +53,6 @@ function ChartTooltip({ active, payload, param }: TooltipProps) {
       <div>
         <i className="dashed" /> Predicted: <b>{p.predicted.toFixed(param.decimals)} {param.unit}</b>
       </div>
-      {p.simulated !== undefined && p.simulated !== null && (
-        <div>
-          <i className="dashed dashed--sim" /> Simulated: <b>{p.simulated} {param.unit}</b>
-          {p.simStatus && p.simStatus !== 'ok' && (
-            <span className="chart-tooltip__status" style={{ color: STATUS_COLORS[p.simStatus] }}>
-              {STATUS_LABELS[p.simStatus]}
-            </span>
-          )}
-        </div>
-      )}
       {p.timestamp && <div className="chart-tooltip__time">🕒 measured {formatTimestamp(p.timestamp)}</div>}
     </div>
   )
@@ -83,18 +73,10 @@ function StatusDot({ cx, cy, payload }: DotProps) {
   return <circle cx={cx} cy={cy} r={payload.status === 'critical' ? 4.5 : 3.5} fill={color} stroke="#0b1426" strokeWidth={1.5} />
 }
 
-/** Simulated points: hollow rings, only when the prediction leaves the safe range */
-function SimDot({ cx, cy, payload }: DotProps) {
-  if (cx === undefined || cy === undefined || !payload || payload.simulated == null || !payload.simStatus || payload.simStatus === 'ok') {
-    return <g />
-  }
-  return <circle cx={cx} cy={cy} r={3.5} fill="#0b1426" stroke={STATUS_COLORS[payload.simStatus]} strokeWidth={2} />
-}
-
 /** Chart: blue line = measurements, gray dashed = mission prediction, colored zones = thresholds */
-export default function TrendChart({ param, data, height = 150, simWindow }: Props) {
+export default function TrendChart({ param, data, height = 150 }: Props) {
   const { warning, critical, direction } = param.thresholds
-  const values = data.flatMap((d) => [d.predicted, d.actual ?? d.predicted, d.simulated ?? d.predicted])
+  const values = data.flatMap((d) => [d.predicted, d.actual ?? d.predicted])
   // environment charts always show the warning limit for context
   if (param.category === 'environment') values.push(warning)
   const pad = (Math.max(...values) - Math.min(...values)) * 0.15 || 1
@@ -112,17 +94,6 @@ export default function TrendChart({ param, data, height = 150, simWindow }: Pro
         <ReferenceArea y1={critical} y2={edge} fill={STATUS_COLORS.critical} fillOpacity={0.1} ifOverflow="hidden" />
         <ReferenceLine y={warning} stroke={STATUS_COLORS.warning} strokeDasharray="6 4" strokeOpacity={0.8} />
         <ReferenceLine y={critical} stroke={STATUS_COLORS.critical} strokeDasharray="6 4" strokeOpacity={0.8} />
-
-        {simWindow && (
-          <ReferenceArea
-            x1={Math.min(simWindow.start, MISSION.lengthDays)}
-            x2={Math.min(simWindow.end, MISSION.lengthDays)}
-            fill={COLORS.simulated}
-            fillOpacity={0.1}
-            ifOverflow="hidden"
-            label={{ value: 'SIM', fill: COLORS.simulated, fontSize: 9, position: 'insideBottom' }}
-          />
-        )}
 
         <XAxis dataKey="day" stroke={COLORS.axis} tick={{ fontSize: 11 }} tickLine={false} ticks={[0, 5, 10, 15, 20, 25, 30]} />
         <YAxis
@@ -158,35 +129,16 @@ export default function TrendChart({ param, data, height = 150, simWindow }: Pro
           activeDot={{ r: 5, stroke: '#0b1426', strokeWidth: 2 }}
           connectNulls
         />
-        {simWindow && (
-          <Line
-            type="monotone"
-            dataKey="simulated"
-            stroke={COLORS.simulated}
-            strokeWidth={2.5}
-            strokeDasharray="2 4"
-            strokeLinecap="round"
-            dot={(props: unknown) => {
-              const { cx, cy, payload, index } = props as DotProps & { index: number }
-              return <SimDot key={index} cx={cx} cy={cy} payload={payload} />
-            }}
-            activeDot={{ r: 4, fill: COLORS.simulated }}
-            isAnimationActive={false}
-          />
-        )}
       </LineChart>
     </ResponsiveContainer>
   )
 }
 
-export function ChartLegend({ simulating = false }: { simulating?: boolean }) {
+export function ChartLegend() {
   return (
     <div className="legend">
       <span><i style={{ background: COLORS.actual }} /> Measured</span>
       <span><i className="dashed" /> Predicted for mission (model – mocked for now)</span>
-      {simulating && (
-        <span className="legend__sim"><i className="dashed dashed--sim" /> 🔮 Scenario prediction (digital twin)</span>
-      )}
       <span><b className="legend__dot" style={{ background: STATUS_COLORS.warning }} /> Warning</span>
       <span><b className="legend__dot" style={{ background: STATUS_COLORS.critical }} /> Critical</span>
       <span className="legend__hint">Hover a chart to see the value and measurement time</span>
@@ -203,18 +155,6 @@ export function ChartStatusBadge({ data }: { data: SeriesPoint[] }) {
   return (
     <span className={`chart-badge chart-badge--${latest === 'ok' ? 'warning' : latest}`}>
       {latest === 'ok' ? '⚠' : STATUS_LABELS[latest]} · {flagged} flagged
-    </span>
-  )
-}
-
-/** Badge in the chart header when the running simulation predicts a problem for this parameter */
-export function ChartSimBadge({ data }: { data: SeriesPoint[] }) {
-  const sim = data.filter((d) => d.simStatus && d.simStatus !== 'ok')
-  if (!sim.length) return null
-  const worst = sim.some((d) => d.simStatus === 'critical') ? 'critical' : 'warning'
-  return (
-    <span className="chart-badge chart-badge--sim" title="Predicted by the running scenario simulation">
-      🔮 {worst === 'critical' ? '✖' : '⚠'} from day {sim[0].day}
     </span>
   )
 }

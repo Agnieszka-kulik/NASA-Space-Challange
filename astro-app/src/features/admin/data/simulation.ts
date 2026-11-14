@@ -129,12 +129,15 @@ export const simWindow = (cfg: SimulationConfig) => {
   return { start, end: start + cfg.duration }
 }
 
-/** 0..1 – rises over ~1.5 days, holds during the event, then recovers over ~3 days */
+/** Progressive buildup across the simulated mission window so scrubbing day-by-day reveals gradual changes */
 function profile(day: number, start: number, end: number) {
   if (day < start) return 0
-  const rise = Math.min(1, (day - start + 1) / 1.5)
-  if (day <= end) return rise
-  return rise * Math.exp(-(day - end) / 2.2)
+  const span = Math.max(1, end - start)
+  if (day <= end) {
+    const progress = (day - start) / span
+    return 0.12 + 1.35 * Math.pow(progress, 0.85)
+  }
+  return 1.47 * Math.exp(-(day - end) / 2.5)
 }
 
 const VULNERABILITY: Record<Status, number> = { ok: 1, warning: 1.1, critical: 1.2 }
@@ -238,6 +241,48 @@ export function summarize(
   const crewParams = params.filter((id) => getParam(id).category === 'astronaut')
   for (const m of CREW) {
     const cells = crewParams.map((id) => cellFor(crewSeries[m.id][id], id))
+    rows.push({ id: m.id, name: m.name, cells, worst: worstStatus(cells.map((c) => c.status)) })
+  }
+  return rows
+}
+
+/**
+ * Returns the exact simulated values & statuses for a specific day (1 .. cfg.duration)
+ * so the user can scrub through the mission day-by-day on the slider.
+ */
+function cellAtDay(series: SeriesPoint[], paramId: string, targetMissionDay: number): ImpactCell {
+  const param = getParam(paramId)
+  const point =
+    series.find((p) => p.day === targetMissionDay) ??
+    series.filter((p) => p.simulated !== undefined && p.simulated !== null).at(-1) ??
+    series.at(-1)!
+  const val = point.simulated ?? point.actual ?? point.predicted
+  return {
+    paramId,
+    peak: val,
+    status: getStatus(param, val),
+    firstBadDay: null,
+  }
+}
+
+export function summarizeAtDay(
+  cfg: SimulationConfig,
+  crewSeries: Record<string, Record<string, SeriesPoint[]>>,
+  environment: Record<string, SeriesPoint[]>,
+  dayStep: number,
+): ImpactRow[] {
+  const targetMissionDay = MISSION.currentDay + Math.max(0, dayStep - 1)
+  const params = simParams(cfg)
+  const rows: ImpactRow[] = []
+
+  const envParams = params.filter((id) => getParam(id).category === 'environment')
+  if (envParams.length) {
+    const cells = envParams.map((id) => cellAtDay(environment[id], id, targetMissionDay))
+    rows.push({ id: 'station', name: 'Station', cells, worst: worstStatus(cells.map((c) => c.status)) })
+  }
+  const crewParams = params.filter((id) => getParam(id).category === 'astronaut')
+  for (const m of CREW) {
+    const cells = crewParams.map((id) => cellAtDay(crewSeries[m.id][id], id, targetMissionDay))
     rows.push({ id: m.id, name: m.name, cells, worst: worstStatus(cells.map((c) => c.status)) })
   }
   return rows
