@@ -1687,6 +1687,144 @@
     color: #00f5d4;
   }
 
+  /* WebLLM + Local NASA RAG Control Box */
+  .webllm-control-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.72rem 0.8rem;
+    border-radius: 10px;
+    background: rgba(7, 16, 26, 0.88);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+  }
+
+  .webllm-control-box__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .webllm-control-box__title {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #7dd3fc;
+  }
+
+  .webllm-status-pill {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.14rem 0.48rem;
+    border-radius: 99px;
+    background: rgba(148, 163, 184, 0.16);
+    color: #cbd5e1;
+  }
+
+  .webllm-status-pill--ready {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    color: #6ee7b7;
+  }
+
+  .webllm-status-pill--loading {
+    background: rgba(56, 189, 248, 0.2);
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    color: #7dd3fc;
+  }
+
+  .webllm-model-select {
+    width: 100%;
+    padding: 0.42rem 0.55rem;
+    border-radius: 7px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(4, 10, 18, 0.92);
+    color: #e2e8f0;
+    font-size: 0.74rem;
+    outline: none;
+  }
+
+  .webllm-load-btn {
+    width: 100%;
+    padding: 0.48rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid #00f5d4;
+    background: linear-gradient(135deg, rgba(0, 245, 212, 0.24), rgba(14, 165, 233, 0.24));
+    color: #ecfdf5;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .webllm-load-btn:hover:not(:disabled) {
+    background: rgba(0, 245, 212, 0.35);
+    box-shadow: 0 0 14px rgba(0, 245, 212, 0.35);
+  }
+
+  .webllm-progress-bar {
+    height: 6px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+
+  .webllm-progress-bar__fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00f5d4, #38bdf8);
+    transition: width 0.2s ease;
+  }
+
+  .webllm-control-box__hint {
+    margin: 0;
+    font-size: 0.68rem;
+    line-height: 1.32;
+    color: #94a3b8;
+  }
+
+  .chat-bubble__meta-right {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .chat-engine-tag {
+    font-size: 0.64rem;
+    font-weight: 700;
+    padding: 0.1rem 0.42rem;
+    border-radius: 5px;
+    background: rgba(56, 189, 248, 0.16);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: #7dd3fc;
+  }
+
+  .chat-rag-citations {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.45rem;
+    padding-bottom: 0.38rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  }
+
+  .chat-rag-citations__label {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    font-weight: 600;
+  }
+
+  .chat-rag-badge {
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    padding: 0.12rem 0.45rem;
+    border-radius: 5px;
+    background: rgba(0, 245, 212, 0.13);
+    border: 1px solid rgba(0, 245, 212, 0.38);
+    color: #99f6e4;
+  }
+
   .duck-chat-categories {
     display: flex;
     flex-direction: column;
