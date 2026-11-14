@@ -12,13 +12,14 @@ K - Keeper<br />
 Realizowany temat: Create Health Monitoring Software for Astronauts on Space Missions<br />
 Autorzy: Marta Komar, Agnieszka Kulik, Anna Sznajder, Joanna Wiencek<br />
 
-3. Napotkany problem oraz uzasadnienie wybrania powyższego wyzwania, aspekty innowacyjne w naszej aplikacji<br />
+2. Napotkany problem oraz uzasadnienie wybrania powyższego wyzwania, aspekty innowacyjne w naszej aplikacji<br />
 Problem:
 - brak zmian wśród wykonywanych czynności
 - brak zmian otoczenia, ludzi i zadań (ubogość bodźców)
 - prowadzi do monotoności i złego samopoczucia psychniczego
 - poczucie samotności oraz frustracji
 - nie są medykami potrzebują ciągłego wsparcia w analizie i wykonywaniu pomiarów
+- brak natychmiastowej analizy danych – duża liczba parametrów biomedycznych utrudnia ich samodzielną interpretację i szybkie wykrywanie niepokojących zmian.
 
 Rozwiązanie:
 - gamefikacja z wbudowanym inteligentnym zarządzaniem codziennymi zadaniami (zmienność zadań zdrowia psychicznego)
@@ -26,7 +27,7 @@ Rozwiązanie:
 - system przypominania o pomiarach
 - wizualizacja zadań do wykoniania (TODO list)
 - profil admina-> analiza zbieranych danych (predykcja i klasyfikacja)
-- odpowiedni interfase (dopasowanie kolorystyczne -> dark and light mode)
+- odpowiedni interface (dopasowanie kolorystyczne -> dark and light mode)
 - wykorzystanie baz danych do oceny stanu zdrowia oraz do zapobiegania wystąpienia stanu krytycznego
 - asystent AI i instrukcje wykonywania pomiarów
 
@@ -54,9 +55,9 @@ Wykorzystanie gryfikacji oraz realnych nagród za wykonywanie rutynowych czynno�
 
 
 
-3. Profil aplikacji widzany przez urzytkownika
+3. Profil aplikacji widzany przez użytkownika
 - statystyka
-- TODO lista
+- TODO lista 
 - stan samopoczucia i nawodnienia
 - poziom stresu
 - okna alarmowe, np. wysoki współczynnik stresu lub hałasu, należy zmienić miejsce wykonywania czynności
