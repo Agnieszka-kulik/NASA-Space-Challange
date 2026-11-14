@@ -18,6 +18,10 @@ export interface ParamDef {
   /** safety thresholds; `direction: 'high'` = higher is worse, 'low' = lower is worse */
   thresholds: { warning: number; critical: number; direction: 'high' | 'low' }
   decimals: number
+  /** how often it is measured (days); default = daily */
+  everyDays?: number
+  /** short explanation shown to the medical officer */
+  info?: string
 }
 
 export const PARAMETERS: ParamDef[] = [
@@ -27,13 +31,17 @@ export const PARAMETERS: ParamDef[] = [
   { id: 'fatigue', label: 'Fatigue', unit: '/100', category: 'astronaut', baseline: 25, drift: 30, noise: 7, decimals: 0, thresholds: { warning: 65, critical: 80, direction: 'high' } },
   { id: 'reflex', label: 'Reaction time', unit: 'ms', category: 'astronaut', baseline: 250, drift: 35, noise: 12, decimals: 0, thresholds: { warning: 310, critical: 340, direction: 'high' } },
   { id: 'memory', label: 'Memory test', unit: 'pts', category: 'astronaut', baseline: 85, drift: -12, noise: 4, decimals: 0, thresholds: { warning: 68, critical: 60, direction: 'low' } },
+  { id: 'bloodPressure', label: 'Blood pressure (systolic)', unit: 'mmHg', category: 'astronaut', baseline: 118, drift: 6, noise: 4, decimals: 0, thresholds: { warning: 135, critical: 150, direction: 'high' }, info: 'Fluid shifts toward the head in microgravity change blood pressure regulation; cardiovascular events are a key spaceflight risk.' },
+  { id: 'glucose', label: 'Blood sugar', unit: 'mg/dL', category: 'astronaut', baseline: 92, drift: 8, noise: 5, decimals: 0, thresholds: { warning: 110, critical: 126, direction: 'high' }, info: 'Inactivity, stress hormones and diet changes can reduce insulin sensitivity during long missions.' },
+  { id: 'mood', label: 'Mood', unit: '/5', category: 'astronaut', baseline: 4.2, drift: -0.7, noise: 0.35, decimals: 1, thresholds: { warning: 2.8, critical: 2.0, direction: 'low' }, info: 'Isolation, confinement and distance from Earth raise the risk of behavioral health problems. Logged daily in the astronaut app.' },
+  { id: 'boneDensity', label: 'Bone density', unit: '% of pre-flight', category: 'astronaut', baseline: 100, drift: -1.4, noise: 0.15, decimals: 1, everyDays: 7, thresholds: { warning: 98.5, critical: 97.5, direction: 'low' }, info: 'Without gravity, weight-bearing bones lose about 1–1.5% of density per month. Measured weekly (ultrasound).' },
   { id: 'heartRate', label: 'Resting heart rate', unit: 'BPM', category: 'astronaut', baseline: 64, drift: 6, noise: 3, decimals: 0, thresholds: { warning: 85, critical: 100, direction: 'high' } },
   { id: 'spo2', label: 'Blood oxygen (SpO₂)', unit: '%', category: 'astronaut', baseline: 98, drift: -1.5, noise: 0.6, decimals: 1, thresholds: { warning: 95, critical: 93, direction: 'low' } },
   { id: 'sleep', label: 'Sleep', unit: 'h', category: 'astronaut', baseline: 7.5, drift: -1.2, noise: 0.5, decimals: 1, thresholds: { warning: 5.5, critical: 4.5, direction: 'low' } },
 
   // --- Station environment (factors affecting crew health) ---
   { id: 'noise', label: 'Station noise', unit: 'dB', category: 'environment', baseline: 58, drift: 4, noise: 2.5, decimals: 0, thresholds: { warning: 65, critical: 70, direction: 'high' } },
-  { id: 'radiation', label: 'Radiation dose', unit: 'mSv/d', category: 'environment', baseline: 0.45, drift: 0.15, noise: 0.06, decimals: 2, thresholds: { warning: 0.7, critical: 0.9, direction: 'high' } },
+  { id: 'radiation', label: 'Radiation dose', unit: 'mSv/d', category: 'environment', baseline: 0.45, drift: 0.15, noise: 0.06, decimals: 2, thresholds: { warning: 3.0, critical: 6.0, direction: 'high' }, info: 'Daily dose depends on location: ~0.5 mSv/d on the ISS, ~1.4 on the Moon, ~1.8 in Mars transit. Solar particle events can spike it far higher.' },
   { id: 'co2', label: 'CO₂ concentration', unit: 'ppm', category: 'environment', baseline: 2400, drift: 500, noise: 180, decimals: 0, thresholds: { warning: 3500, critical: 4500, direction: 'high' } },
   { id: 'cabinTemp', label: 'Module temperature', unit: '°C', category: 'environment', baseline: 22, drift: 1, noise: 0.5, decimals: 1, thresholds: { warning: 25, critical: 27, direction: 'high' } },
   { id: 'humidity', label: 'Humidity', unit: '%', category: 'environment', baseline: 45, drift: 5, noise: 3, decimals: 0, thresholds: { warning: 60, critical: 70, direction: 'high' } },
@@ -44,7 +52,8 @@ export const CATEGORY_LABELS: Record<ParamCategory, string> = {
   environment: 'Station environment',
 }
 
-export const DEFAULT_SELECTED = ['temperature', 'stress', 'fatigue', 'reflex', 'memory', 'noise', 'radiation', 'co2']
+// the 6 indicators named in the challenge come first: BP, HR, blood sugar, temperature, sleep, mood
+export const DEFAULT_SELECTED = ['bloodPressure', 'heartRate', 'glucose', 'temperature', 'sleep', 'mood', 'stress', 'boneDensity', 'noise', 'radiation', 'co2']
 
 export const getParam = (id: string) => PARAMETERS.find((p) => p.id === id)!
 
