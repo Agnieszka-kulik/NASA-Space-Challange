@@ -54,10 +54,10 @@ export default function TodoAccordion({
       setReflexState('ready')
       setReflexStart(performance.now())
     }, delay)
-    ;(window as unknown as { __reflexTarget?: { sectionId: string; taskId: string } }).__reflexTarget = {
-      sectionId,
-      taskId,
-    }
+      ; (window as unknown as { __reflexTarget?: { sectionId: string; taskId: string } }).__reflexTarget = {
+        sectionId,
+        taskId,
+      }
   }
 
   const finishReflexGame = () => {
@@ -80,7 +80,7 @@ export default function TodoAccordion({
   const handleDrawMemoryGame = (taskId: string) => {
     setDrawnGameMsg((prev) => ({
       ...prev,
-      [taskId]: 'Tryb losowania gotowy (docelowa pula gierek)',
+      [taskId]: 'Randomizer ready (upcoming game pool)',
     }))
   }
 
@@ -96,8 +96,8 @@ export default function TodoAccordion({
     <div className="todo-card">
       <div className="todo-card__header">
         <div>
-          <h2 className="todo-card__title">Lista Zadań i Pomiarów</h2>
-          <p className="todo-card__sub">Rozwiń sekcję, aby wprowadzić pomiary lub wykonać test</p>
+          <h2 className="todo-card__title">Task & Measurement Checklist</h2>
+          <p className="todo-card__sub">Expand a section to enter your measurements or run a test</p>
         </div>
       </div>
 
@@ -110,9 +110,8 @@ export default function TodoAccordion({
           return (
             <div
               key={section.id}
-              className={`todo-section ${isOpen ? 'todo-section--open' : ''} ${
-                completedCount === totalCount && totalCount > 0 ? 'todo-section--complete' : ''
-              }`}
+              className={`todo-section ${isOpen ? 'todo-section--open' : ''} ${completedCount === totalCount && totalCount > 0 ? 'todo-section--complete' : ''
+                }`}
             >
               <button
                 type="button"
@@ -159,11 +158,11 @@ export default function TodoAccordion({
                                   className="todo-game-btn"
                                   onClick={() => startReflexGame(section.id, task.id)}
                                 >
-                                  {reflexMs ? `Wynik: ${reflexMs}ms (Powtórz)` : '⚡ Test refleksu'}
+                                  {reflexMs ? `Score: ${reflexMs}ms (Retry)` : '⚡ Reflex Test'}
                                 </button>
                               ) : reflexState === 'waiting' ? (
                                 <button type="button" className="todo-game-btn todo-game-btn--wait">
-                                  Czekaj na sygnał...
+                                  Wait for green...
                                 </button>
                               ) : (
                                 <button
@@ -171,7 +170,7 @@ export default function TodoAccordion({
                                   className="todo-game-btn todo-game-btn--go"
                                   onClick={finishReflexGame}
                                 >
-                                  KLIKNIJ TERAZ!
+                                  CLICK NOW!
                                 </button>
                               )}
                             </div>
@@ -184,7 +183,7 @@ export default function TodoAccordion({
                                 className="todo-game-btn todo-game-btn--draw"
                                 onClick={() => handleDrawMemoryGame(task.id)}
                               >
-                                🎲 Losuj gierkę
+                                🎲 Draw Game
                               </button>
                               {drawnGameMsg[task.id] && (
                                 <span className="todo-drawn-hint">{drawnGameMsg[task.id]}</span>
@@ -205,7 +204,7 @@ export default function TodoAccordion({
                             </div>
                           )}
 
-                          <span className="todo-item__pts">+{task.points} pkt</span>
+                          <span className="todo-item__pts">+{task.points} pts</span>
                         </div>
                       </li>
                     ))}
@@ -216,19 +215,19 @@ export default function TodoAccordion({
                       <input
                         type="text"
                         className="todo-input todo-input--wide"
-                        placeholder="Dodaj własny pomiar (np. Glukoza, Obwód, Notatka)..."
+                        placeholder="Add custom measurement (e.g. Glucose, Circumference, Note)..."
                         value={customLabel}
                         onChange={(e) => setCustomLabel(e.target.value)}
                       />
                       <input
                         type="text"
                         className="todo-input"
-                        placeholder="Wartość (opcjonalnie)"
+                        placeholder="Value (optional)"
                         value={customVal}
                         onChange={(e) => setCustomVal(e.target.value)}
                       />
                       <button type="submit" className="todo-add-btn">
-                        + Dodaj
+                        + Add
                       </button>
                     </form>
                   )}

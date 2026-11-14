@@ -13,10 +13,10 @@ import { MISSION, formatTimestamp, type SeriesPoint } from '../data/mockData'
 import { STATUS_COLORS, STATUS_LABELS, type ParamDef } from '../data/parameters'
 
 export const COLORS = {
-  actual: '#4da3ff',
-  predicted: '#8a94a6',
-  grid: 'rgba(255,255,255,0.08)',
-  axis: '#8a94a6',
+  actual: '#00f5d4',
+  predicted: '#64748b',
+  grid: 'rgba(148, 163, 184, 0.12)',
+  axis: '#94a3b8',
 }
 
 interface Props {
@@ -104,8 +104,8 @@ export default function TrendChart({ param, data, height = 150 }: Props) {
           tickFormatter={(v: number) => v.toFixed(param.decimals)}
         />
         <Tooltip
-          content={(props) => <ChartTooltip {...(props as unknown as TooltipProps)} param={param} />}
-          cursor={{ stroke: 'rgba(255,255,255,0.3)' }}
+          content={(props: unknown) => <ChartTooltip {...(props as TooltipProps)} param={param} />}
+          cursor={{ stroke: 'rgba(0, 245, 212, 0.35)' }}
         />
         <ReferenceLine
           x={MISSION.currentDay}
@@ -119,8 +119,8 @@ export default function TrendChart({ param, data, height = 150 }: Props) {
           dataKey="actual"
           stroke={COLORS.actual}
           strokeWidth={2}
-          dot={(props) => {
-            const { cx, cy, payload, index } = props as unknown as DotProps & { index: number }
+          dot={(props: unknown) => {
+            const { cx, cy, payload, index } = props as DotProps & { index: number }
             return <StatusDot key={index} cx={cx} cy={cy} payload={payload} />
           }}
           activeDot={{ r: 5, stroke: '#0b1426', strokeWidth: 2 }}
