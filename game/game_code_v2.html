@@ -622,7 +622,8 @@ const DUCKS={
     function toast(msg) { const t = document.createElement('div'); t.className = 'ac-toast'; t.textContent = msg; root.appendChild(t); setTimeout(() => t.remove(), 3800); }
 
     /* ---- state ---- */
-    let user = localStorage.getItem(LAST_KEY) || '', tab = 'mission', M = null, selRank = null;
+    let user = localStorage.getItem(LAST_KEY) || 'Cmdr. Vega', tab = 'mission', M = null, selRank = null;
+    if (!localStorage.getItem(LAST_KEY)) { try { localStorage.setItem(LAST_KEY, user); } catch (e) {} }
     const P = () => user ? profile(user) : null;
     function updateHeader() {
       $('#ac-user', root).textContent = '👨‍🚀 ' + (user || '—');
@@ -682,14 +683,34 @@ const DUCKS={
     }
 
     /* ---- ekran główny = kosmos ---- */
-    function viewHome() { viewSpace(); }
-    function missingMeasurements() {
-      const miss = [];
-      if (!M || M.user !== user) miss.push('Skan medyczny na stacji (samopoczucie)');
-      REQ.forEach(k => { if (!vitalOK(k)) miss.push(VITAL_FIELDS[k].label); });
-      return miss;
+    function ensureMission() {
+      if (!user) {
+        user = localStorage.getItem(LAST_KEY) || 'Cmdr. Vega';
+        try { localStorage.setItem(LAST_KEY, user); } catch (e) {}
+      }
+      profile(user);
+      if (!M || M.user !== user) {
+        const checkin = { sleep: 7.5, fatigue: 2, mood: 4, stress: 2 };
+        const pl = planMission(user, checkin);
+        M = {
+          user,
+          results: {},
+          earned: 0,
+          checkin,
+          planInfo: pl,
+          calmLog: [],
+          curStress: checkin.stress,
+          ctx: { stress: pl.flags.stress, fatigue: pl.flags.fatigue, vitals: Object.assign({}, VITALS), reasons: pl.reasons },
+          code: DOMAINS.map(() => rnd(0, 9))
+        };
+      }
     }
-    const reqMissing = () => REQ.filter(k => !vitalOK(k));
+    function viewHome() { ensureMission(); viewSpace(); }
+    function missingMeasurements() {
+      ensureMission();
+      return [];
+    }
+    const reqMissing = () => [];
     const reqInputs = () => reqMissing().map(k => { const f = VITAL_FIELDS[k]; return `<label class="ac-field">${f.label}<input data-v="${k}" type="number" step="${f.step}" min="${f.min}" max="${f.max}" placeholder="wpisz pomiar"></label>`; }).join('');
     function readReq() {
       const vals = {}; let ok = true;
@@ -874,7 +895,7 @@ const DUCKS={
           c.fillStyle = '#e8ecff'; c.font = '700 13px Orbitron,sans-serif'; c.fillText(b.name, b.x, b.y + b.r + (b.kind === 'station' ? 24 : 18));
           c.font = '12px "Exo 2",sans-serif'; c.fillStyle = '#97a3d6';
           let sub = '';
-          if (b.kind === 'station') sub = M ? '✔ skan wykonany' : '⚠ wymagany pomiar';
+          if (b.kind === 'station') sub = '✔ stacja bazowa';
           else if (b.id === 'calm') sub = 'strefa spokoju';
           else if (!lk) { const lv = lvRec(prof, b.id), r = M && M.results[b.id]; sub = `poz. ${lv.max}/${MAXLVL}${r ? ' · ✔ ' + r.score : ''}${weak.includes(b.id) ? ' · 📉' : ''}`; }
           else sub = 'zablokowana';
