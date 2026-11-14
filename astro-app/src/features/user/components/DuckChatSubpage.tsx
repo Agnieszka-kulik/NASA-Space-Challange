@@ -41,12 +41,16 @@ interface QuickPrompt {
 
 const WEBLLM_MODELS = [
   {
-    id: 'SmolLM2-360M-Instruct-q4f16_1-MLC',
-    label: 'SmolLM2-360M (Ultra-Fast · ~250 MB)',
+    id: 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
+    label: 'Qwen2.5-0.5B (Smart & Fast · ~350 MB)',
   },
   {
     id: 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
     label: 'Llama-3.2-1B (High Accuracy · ~650 MB)',
+  },
+  {
+    id: 'SmolLM2-360M-Instruct-q4f16_1-MLC',
+    label: 'SmolLM2-360M (Ultra-Light · ~250 MB)',
   },
 ]
 
@@ -246,13 +250,19 @@ export default function DuckChatSubpage({
           overallScorePercent,
         })
 
+        // Expand ultra-short emoticons/messages so small models (360M/500M) understand the intent
+        const expandedUserPrompt =
+          userText.trim().length <= 4
+            ? `The astronaut sent the message "${userText}" (expressing their mood/state). Respond warmly in 3 complete sentences as their AI Duck companion with helpful advice.`
+            : `${userText}\n(Please answer in 2-4 helpful, complete sentences using the NASA medical context above.)`
+
         const chunks = await engineRef.current.chat.completions.create({
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: userText },
+            { role: 'user', content: expandedUserPrompt },
           ],
-          temperature: 0.35,
-          max_tokens: 220,
+          temperature: 0.4,
+          max_tokens: 240,
           stream: true,
         })
 
@@ -267,6 +277,27 @@ export default function DuckChatSubpage({
                 ? {
                     ...m,
                     text: currentText || '...',
+                  }
+                : m
+            )
+          )
+        }
+
+        // Guardrail: if a tiny model (like SmolLM2-360M) stopped early after just "Quack!" or "(:",
+        // automatically enrich the response with the full Local NASA RAG clinical explanation!
+        if (streamedText.trim().length < 45) {
+          const ragSupplement = synthesizeOfflineRagReply(userText, ragAnalysis, {
+            points,
+            waterGlasses,
+            waterGoal,
+            overallScorePercent,
+          })
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === duckMsgId
+                ? {
+                    ...m,
+                    text: ragSupplement,
                   }
                 : m
             )

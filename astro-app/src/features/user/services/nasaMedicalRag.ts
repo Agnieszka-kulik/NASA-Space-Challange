@@ -30,6 +30,40 @@ export interface RagQueryAnalysis {
  */
 export const NASA_MEDICAL_CORPUS: NasaMedicalDoc[] = [
   {
+    id: 'neuro-headache-sans',
+    protocolCode: 'ISS-MED-SANS-04',
+    title: 'Space Headaches, Cephalad Fluid Shift & Neuro-Ocular Syndrome (SANS)',
+    category: 'physical',
+    keywords: [
+      'headache',
+      'headaches',
+      'migraine',
+      'head',
+      'hurt',
+      'hurts',
+      'pain',
+      'ache',
+      'eye',
+      'eyes',
+      'vision',
+      'sight',
+      'blur',
+      'blurry',
+      'sans',
+      'optic',
+      'snellen',
+      'cranial',
+      'sinus',
+      'congestion',
+    ],
+    normalRange: 'Visual Acuity: 20/20 (6/6) | Cabin CO2: <3.0 mmHg | Hydration: ≥2.0 L/day',
+    clinicalContent:
+      'Over 70% of astronauts experience space headaches during orbital missions. The primary causes in microgravity are: 1) Cephalad fluid shift (1.5–2L of fluid moving toward the head, increasing intracranial and sinus pressure), 2) Localized pockets of elevated CO2 (>3.5 mmHg) forming around the head due to lack of natural air convection, and 3) Mild dehydration or SANS eye strain.',
+    countermeasures:
+      '1) Drink 250–500 ml of water immediately. 2) Move to a well-ventilated cabin area with active airflow to disperse local CO2 pockets. 3) Rest with screens dimmed for 15 minutes and check your blood pressure and body temperature. If severe, consult the flight surgeon regarding onboard ibuprofen/acetaminophen.',
+    recommendedMood: 'pytajaca',
+  },
+  {
     id: 'cv-bp',
     protocolCode: 'NASA-STD-3001-CV-01',
     title: 'Cardiovascular Adaptation & Orbital Blood Pressure',
@@ -57,34 +91,6 @@ export const NASA_MEDICAL_CORPUS: NasaMedicalDoc[] = [
     countermeasures:
       'Measure cuffed brachial blood pressure after 5 minutes of seated/floating rest. Maintain at least 2.0L (8 pouches) of daily water intake, perform daily ARED/CV exercise, and avoid Valsalva straining without proper breathing.',
     recommendedMood: 'saturn',
-  },
-  {
-    id: 'neuro-sans',
-    protocolCode: 'ISS-MED-SANS-04',
-    title: 'Spaceflight-Associated Neuro-Ocular Syndrome (SANS) & Vision',
-    category: 'physical',
-    keywords: [
-      'eye',
-      'eyes',
-      'vision',
-      'sight',
-      'blur',
-      'blurry',
-      'sans',
-      'optic',
-      'snellen',
-      'focus',
-      'headache',
-      'cranial',
-      'pressure',
-      'retina',
-    ],
-    normalRange: 'Visual Acuity: 20/20 (6/6) | No Amsler grid distortion',
-    clinicalContent:
-      'SANS affects ~60% of long-duration astronauts due to chronic cephalad venous congestion and mild intracranial pressure elevation in 0G. Clinical findings include optic disc edema, globe flattening, choroidal folds, and hyperopic (farsighted) refractive shifts (+0.50 to +1.50 D).',
-    countermeasures:
-      'Perform weekly Snellen chart acuity and Amsler grid metamorphopsia checks at 3 meters. Keep cabin CO2 below 3.0 mmHg, use tunable "Space Anticipation Glasses" if hyperopic shift occurs, and log any visual flashes or persistent frontal headaches.',
-    recommendedMood: 'bezNoza',
   },
   {
     id: 'renal-hydration',
@@ -146,7 +152,7 @@ export const NASA_MEDICAL_CORPUS: NasaMedicalDoc[] = [
   {
     id: 'psych-bhp',
     protocolCode: 'ISS-PSYCH-BHP-01',
-    title: 'Behavioral Health & Performance (BHP): Stress, Isolation & Mood',
+    title: 'Behavioral Health & Performance (BHP): Stress, Isolation & Mood Support',
     category: 'mental',
     keywords: [
       'stress',
@@ -158,6 +164,7 @@ export const NASA_MEDICAL_CORPUS: NasaMedicalDoc[] = [
       'sad',
       'depressed',
       'lonely',
+      'alone',
       'isolation',
       'home',
       'earth',
@@ -169,6 +176,11 @@ export const NASA_MEDICAL_CORPUS: NasaMedicalDoc[] = [
       'breath',
       'breathing',
       'relax',
+      'bad',
+      'unhappy',
+      'upset',
+      'down',
+      'bored',
     ],
     normalRange: 'Mood Score: ≥3/5 | Stress Index (HRV): <45/100',
     clinicalContent:
@@ -239,7 +251,7 @@ export const NASA_MEDICAL_CORPUS: NasaMedicalDoc[] = [
   {
     id: 'hema-blood-neuro',
     protocolCode: 'ISS-HEMA-BLOOD-07',
-    title: 'Spaceflight Anemia, Capillary Blood Profile & Cognitive Reflexes',
+    title: 'Spaceflight Anemia, Capillary Blood Profile, Nutrition & Cognitive Reflexes',
     category: 'physical',
     keywords: [
       'capillary',
@@ -255,10 +267,17 @@ export const NASA_MEDICAL_CORPUS: NasaMedicalDoc[] = [
       'minigame',
       'brain',
       'reaction',
+      'food',
+      'eat',
+      'hungry',
+      'nutrition',
+      'nausea',
+      'sick',
+      'stomach',
     ],
     normalRange: 'Hemoglobin: 13.5–17.5 g/dL | Fasting Glucose: 70–99 mg/dL | Reflex RT: 190–270 ms',
     clinicalContent:
-      'Spaceflight hemolysis increases red blood cell destruction by ~50% in microgravity ("space anemia"), while microgravity insulin resistance can alter fasting blood glucose. Cognitive alertness (reaction time and sequential working memory) is sensitive to sleep debt and CO2 levels.',
+      'Spaceflight hemolysis increases red blood cell destruction by ~50% in microgravity ("space anemia"), while microgravity insulin resistance can alter fasting blood glucose. Adequate caloric intake (2800–3200 kcal/day with Vitamin D3 and iron) and cognitive drills maintain crew readiness.',
     countermeasures:
       'Perform weekly ring-finger capillary blood micro-sampling using the portable i-STAT analyzer. Complete daily Reflex and Sequential Memory cognitive minigames (use the 🎲 Randomize button for varied cognitive drills) to track neuro-vestibular processing speed.',
     recommendedMood: 'saturn',
@@ -296,9 +315,6 @@ export const NASA_MEDICAL_CORPUS: NasaMedicalDoc[] = [
   },
 ]
 
-/**
- * Tokenize and normalize text for fast local BM25 / TF-IDF retrieval
- */
 function tokenize(text: string): string[] {
   return text
     .toLowerCase()
@@ -307,10 +323,6 @@ function tokenize(text: string): string[] {
     .filter((w) => w.length >= 2)
 }
 
-/**
- * Local RAG Retriever: ranks NASA medical documents against the user query
- * using keyword boosting + token overlap + clinical vital sign pattern matching.
- */
 export function retrieveNasaMedicalDocs(
   query: string,
   topK = 2
@@ -322,7 +334,21 @@ export function retrieveNasaMedicalDocs(
   let forcedDocId: string | null = null
   let suggestedMood: DuckPresetId = 'zSerduszkiem'
 
-  // 1. Clinical Numerical Vital Sign Parser (Blood Pressure, Temperature, SpO2, Sleep)
+  // Detect sad emoticons or short distress expressions like ":(", ":'(", "sad", "help"
+  if (
+    qLower.includes(':(') ||
+    qLower.includes('=( ') ||
+    qLower === ':(' ||
+    qLower === ':/' ||
+    qLower === ';(' ||
+    qLower.includes('😢') ||
+    qLower.includes('😞')
+  ) {
+    forcedDocId = 'psych-bhp'
+    suggestedMood = 'zSerduszkiem'
+  }
+
+  // Clinical Numerical Vital Sign Parser (Blood Pressure, Temperature)
   const bpMatch = qLower.match(/(\d{2,3})\s*\/\s*(\d{2,3})/)
   if (bpMatch) {
     const sys = Number(bpMatch[1])
@@ -358,17 +384,17 @@ export function retrieveNasaMedicalDocs(
     }
   }
 
-  // 2. Score every document in NASA_MEDICAL_CORPUS
+  // Score every document in NASA_MEDICAL_CORPUS
   const scored: RetrievedRagResult[] = NASA_MEDICAL_CORPUS.map((doc) => {
     let score = 0
 
     if (doc.id === forcedDocId) {
-      score += 25
+      score += 30
     }
 
     for (const kw of doc.keywords) {
       if (qLower.includes(kw)) {
-        score += kw.length >= 5 ? 6 : 4
+        score += kw.length >= 5 ? 7 : 4.5
       }
     }
 
@@ -392,7 +418,6 @@ export function retrieveNasaMedicalDocs(
           { doc: NASA_MEDICAL_CORPUS[8], score: 1 }, // HUD Manual
         ]
 
-  // 3. Determine best OLED Duck Mood
   if (!vitalSignAlert) {
     if (
       qLower.includes('skip') ||
@@ -408,19 +433,18 @@ export function retrieveNasaMedicalDocs(
     }
   }
 
-  // 4. Contextual follow-up prompts
   const primaryCat = retrievedDocs[0]?.doc.category ?? 'mental'
   const followUps =
     primaryCat === 'mental'
       ? [
           'Guide me through Box Breathing (NASA-BHP)',
           'Why do astronauts sleep poorly in orbit?',
-          'How many points do I need for an Earth video call?',
+          'Tell me a space duck joke to cheer me up!',
         ]
       : primaryCat === 'physical'
         ? [
             'My blood pressure is 128/82, is that nominal?',
-            'Why does microgravity cause kidney stones & SANS?',
+            'I have a headache, what can I do?',
             'How does ARED exercise protect my bones?',
           ]
         : [
@@ -438,8 +462,8 @@ export function retrieveNasaMedicalDocs(
 }
 
 /**
- * Builds the System Prompt for WebLLM injecting the retrieved NASA RAG documents
- * and the astronaut's live telemetry.
+ * Builds an instruction-optimized prompt for small in-browser models (SmolLM2 / Qwen2.5 / Llama-3.2).
+ * Note: We avoid putting literal single-word catchphrases in quotes so small models don't stop after 1 word.
  */
 export function buildWebLlmRagPrompt(
   analysis: RagQueryAnalysis,
@@ -450,32 +474,20 @@ export function buildWebLlmRagPrompt(
     overallScorePercent: number
   }
 ): string {
-  const ragContextBlocks = analysis.retrievedDocs
-    .map(
-      (r, idx) =>
-        `[DOC ${idx + 1}: ${r.doc.protocolCode} — ${r.doc.title}]\n` +
-        `Normal Range: ${r.doc.normalRange ?? 'N/A'}\n` +
-        `Clinical Facts: ${r.doc.clinicalContent}\n` +
-        `NASA Countermeasures: ${r.doc.countermeasures}`
-    )
-    .join('\n\n')
+  const topDoc = analysis.retrievedDocs[0]?.doc
+  const ragSummary = topDoc
+    ? `Protocol [${topDoc.protocolCode}] (${topDoc.title}): ${topDoc.clinicalContent} Recommended action: ${topDoc.countermeasures}`
+    : ''
 
-  return `You are the onboard AI Duck Medical & Wellness Companion for an astronaut on a space station.
-Speak in friendly, concise, supportive English (max 3-4 sentences). Occasionally say "Quack!".
-When the user asks about health, medicine, spaceflight, vitals, or how the dashboard works, ground your advice in the Retrieved NASA Medical RAG Protocols and Live Telemetry below and cite the protocol code (e.g. [${analysis.retrievedDocs[0]?.doc.protocolCode}]). If the user asks any other general, casual, or creative question, answer it naturally and helpfully in character as their friendly space duck companion!
-
-LIVE ASTRONAUT TELEMETRY:
-- Daily Wellness Score: ${telemetry.overallScorePercent}%
-- Hydration Today: ${telemetry.waterGlasses}/${telemetry.waterGoal} glasses (${(telemetry.waterGlasses * 0.25).toFixed(2)}L / ${(telemetry.waterGoal * 0.25).toFixed(1)}L)
-- Current Reward Points: ${telemetry.points} PTS
-${analysis.vitalSignAlert ? `- VITAL SIGN EVALUATION: ${analysis.vitalSignAlert}\n` : ''}
-RETRIEVED NASA MEDICAL RAG PROTOCOLS:
-${ragContextBlocks}`
+  return `You are a helpful, friendly AI Medical & Wellness Companion for an astronaut aboard a space station.
+Always write a complete, helpful answer of 2 to 4 full sentences in English. Never reply with just a single word or emoticon.
+Astronaut Live Status: Wellness Score ${telemetry.overallScorePercent}%, Water ${telemetry.waterGlasses}/${telemetry.waterGoal} glasses, Points ${telemetry.points} PTS.
+${analysis.vitalSignAlert ? `Clinical Alert: ${analysis.vitalSignAlert}\n` : ''}Relevant NASA Medical Knowledge: ${ragSummary}`
 }
 
 /**
- * Instant Local Offline RAG Synthesizer (used when WebLLM is not yet loaded or as instant fallback)
- * Synthesizes an accurate medical response directly from the retrieved NASA RAG docs + live telemetry.
+ * Instant Local Offline RAG Synthesizer (works 100% without internet and without WebGPU,
+ * and also acts as a quality booster if a tiny browser model generates too few tokens).
  */
 export function synthesizeOfflineRagReply(
   userQuery: string,
@@ -489,6 +501,35 @@ export function synthesizeOfflineRagReply(
 ): string {
   const q = userQuery.toLowerCase().trim()
 
+  // 1. Sad emoticons / feeling down
+  if (
+    q === ':(' ||
+    q === ':/' ||
+    q === ';(' ||
+    q.includes(':(') ||
+    q.includes('😢') ||
+    q.includes('sad') ||
+    q.includes('bad') ||
+    q.includes('lonely')
+  ) {
+    return `Quack 💙 I see that frown, Commander! Space missions can feel isolating and exhausting. According to NASA Behavioral Health protocol [ISS-PSYCH-BHP-01], let’s do a quick reset together: take 3 slow deep breaths (4s inhale, 4s hold, 4s exhale), drink a glass of water (you’re at ${telemetry.waterGlasses}/${telemetry.waterGoal} today), and log your mood in the Mood Tracker so the crew can support you. Want me to tell you a space joke or guide you through a relaxation exercise?`
+  }
+
+  // 2. Happy emoticons / greetings
+  if (
+    q === ':)' ||
+    q === ':d' ||
+    q.includes(':)') ||
+    q === 'hi' ||
+    q === 'hello' ||
+    q === 'hey' ||
+    q.startsWith('hello ') ||
+    q.startsWith('hi ')
+  ) {
+    return `Quack-quack! 🦆 Great to hear from you, Commander! Your daily wellness score is at ${telemetry.overallScorePercent}%, hydration is ${telemetry.waterGlasses}/${telemetry.waterGoal} glasses, and you have ${telemetry.points} PTS. You can ask me about any symptom (like headaches, fatigue, or blood pressure), stress relief, or how our station instruments work!`
+  }
+
+  // 3. Skipping tasks / laziness
   if (
     q.includes('skip') ||
     q.includes('lazy') ||
@@ -499,10 +540,12 @@ export function synthesizeOfflineRagReply(
     return `Quack?! 🔪 Put that thought right out of the airlock! According to [ISS-EX-ARED-03] and [ASTRO-HUD-MANUAL-01], skipping daily resistance workouts and medical checks leads to 1.5% monthly bone loss in microgravity—and forces me to hold my pixel knife on your monitor! Complete at least one task right now to boost your ${telemetry.overallScorePercent}% daily score!`
   }
 
+  // 4. Jokes
   if (q.includes('joke') || q.includes('funny')) {
     return `Quack-quack! 🦆 Why did the astronaut duck love [ISS-PSYCH-BHP-01]? Because floating in zero-G makes every featherweight joke 100% lighter! 🚀 Your current wellness score is ${telemetry.overallScorePercent}%—keep smiling, Commander!`
   }
 
+  // 5. Score / Points / Hydration status
   if (
     q.includes('my score') ||
     q.includes('how am i doing') ||
@@ -517,29 +560,27 @@ export function synthesizeOfflineRagReply(
     }`
   }
 
-  const topDoc = analysis.retrievedDocs[0]?.doc
-  if (!topDoc) {
-    return `Quack! 🦆 I searched our local NASA medical database. Your current score is ${telemetry.overallScorePercent}% and hydration is ${telemetry.waterGlasses}/${telemetry.waterGoal} glasses. Ask me about blood pressure, SANS vision, ARED workouts, radiation, sleep, or stress!`
-  }
+  // 6. Check if any RAG document matched strongly (score > 1)
+  const topResult = analysis.retrievedDocs[0]
+  if (topResult && topResult.score > 1) {
+    const topDoc = topResult.doc
+    const parts: string[] = []
+    if (analysis.vitalSignAlert) {
+      parts.push(`🦆 ${analysis.vitalSignAlert}`)
+    } else {
+      parts.push(
+        `Quack! 🦆 Based on NASA protocol [${topDoc.protocolCode}] (${topDoc.title}): ${topDoc.clinicalContent}`
+      )
+    }
 
-  const parts: string[] = []
-  if (analysis.vitalSignAlert) {
-    parts.push(`🦆 ${analysis.vitalSignAlert}`)
-  } else {
-    parts.push(`Quack! 🦆 According to NASA protocol [${topDoc.protocolCode}] (${topDoc.title}): ${topDoc.clinicalContent}`)
-  }
-
-  parts.push(
-    `✅ Recommended Countermeasure: ${topDoc.countermeasures}${
-      topDoc.normalRange ? ` (Nominal target: ${topDoc.normalRange}).` : ''
-    }`
-  )
-
-  if (topDoc.id === 'renal-hydration') {
     parts.push(
-      `💧 Live Status: You have logged ${telemetry.waterGlasses}/${telemetry.waterGoal} glasses (${(telemetry.waterGlasses * 0.25).toFixed(2)}L) today.`
+      `✅ What you can do right now: ${topDoc.countermeasures}${
+        topDoc.normalRange ? ` (Target range: ${topDoc.normalRange}).` : ''
+      }`
     )
+    return parts.join('\n\n')
   }
 
-  return parts.join('\n\n')
+  // 7. Open-ended conversational reply for any other random message when offline
+  return `Quack! 🦆 I received your message: "${userQuery}". Even while completely offline from Earth, I’m monitoring your station telemetry (Daily Score: ${telemetry.overallScorePercent}%, Hydration: ${telemetry.waterGlasses}/${telemetry.waterGoal} glasses, Points: ${telemetry.points} PTS). Tell me how your body or mood feels today (e.g. headache, tired, stressed, blood pressure reading) and I’ll pull the matching NASA countermeasure protocol!`
 }
