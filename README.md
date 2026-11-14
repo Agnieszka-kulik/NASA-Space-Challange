@@ -1,2 +1,85 @@
 # NASA-Space-Challange
 Repo na zawody NASA Space Challange
+
+Prezentacja
+
+1. Wstęp, nazwa teamu, wybrane wyzwanie
+
+DUCK AGH, Create Health Monitoring Software for Astronauts on Space Missions
+
+2. Napotkany problem oraz uzasadnienie wybrania powyższego wyzwania, aspekty innowacyjne w naszej aplikacji
+
+Monotonność robienia pomiarów, mała atrakcyjność, uciążliwość, zapominanie o pomiarach, problem z prawidłową analizą wszystkich pomiarów biomedycznych, 
+- obniżenie czujności
+- mechaniczne pomiary lub z opóźnieniem
+- zmęczenie rutyną --> spadek  morali, irytacja z powodu rutynowych zadań
+- rutynowość --> problem pojawia się w środkowej i końcowej fazie eksperymentu/misji
+- ubogość zewnętrznego środowiska sensorycznego obniża poziom pobudzenia poznawczego --> bezpośredni spadek wydajności oraz błędów w rutynowych zadaniach --> zaangażowanie bodźców wizualnych w codziennych zadaniach https://ntrs.nasa.gov/api/citations/20120002722/downloads/20120002722.pdf
+- brak szybiej informacji zwrotnej żle wpływa na realizację zadania, staje się czysto formalne (brak zaangażowania)
+
+Wykorzystanie gryfikacji oraz realnych nagród za wykonywanie rutynowych czynności
+- zwiększenie reguralności
+- biofeedback - wizualizacja trendów własnego organizmu oraz poczucie sensu
+- pisanie własnego dziennika pozwoliło na poczucie sensu oraz zachowania perspektywy nad wykonywaną pracą (realny, ciągły progres) oraz pozwoliło na uzyskanie lepszej relacji z innymi https://ntrs.nasa.gov/api/citations/20100026549/downloads/20100026549.pdf
+- zastosowanie gier, feedback, śledzenie trendów, serii i celów zespołowych https://www.researchgate.net/publication/396662408_Game_Mechanics_in_Space_Leveraging_Gamification_to_Support_Crew_Performance_and_Resilience
+- zamienia suchy obowiązek w pętlę natychmiastowej informacji zwrotnej.
+
+3. Profil aplikacji widzany przez urzytkownika
+- statystyka
+- TODO lista
+- stan samopoczucia i nawodnienia
+- poziom stresu
+- okna alarmowe, np. wysoki współczynnik stresu lub hałasu, należy zmienić miejsce wykonywania czynności
+
+4. Profil aplikacji widzany przez administratora
+- porównianie wszystkich uczestników misji
+- analiza warunków środowiskowych
+- aktualne parametry życiowe urzytkowników
+
+5. Anaiza psychicznego stanu astronauta i czasu reakcji
+Gry na reakcję oraz trening oka z wykorzystaniem eye tracking(zmiejszanie zmęczenia oka przy długotrwałym skupieniu i bezruchu oka)
+
+
+6. Stowrzenie digital twin
+wykorzystanie modeli uczenia maszynowego do przewidywania akywności fizycznej oraz czasu regeneracji; model do wyznaczenia poziomu stresu, którym obarczony jest astronauta oraz wpływu hałasu na poziom skupienia i koncentracji
+
+7. Kierunek rozwoju aplikacji, nowe wyzwania
+
+
+-------------------------------------------
+-------------------------------------------
+
+
+
+Nasze wyzwanie główne aspekty:
+- ekspozycja na czynniki środowiskowe (promieniowanie, izolacja i uwięzienie, zmienne pole grawitacyjne) --> niesprzyjające warunki
+- narażenie na pogorszenie stanu zdrowia (zmiany systemu imulogicznego, utrata gęstości kości, problemy z układem krążenia, problemy ze zdrowniem psychicznym/behawioralne)
+- obarczenie austronautów samodzielnym wykonywaniem zadań i samodzielne wykrywanie zmian zdrowotnych w swoim organizmie
+- podejmowanie przez astronoma decyzji natychmiastowych dotyczących własnego zdrowia oraz podejmowanie działań
+
+
+Przydatne wskaźniki stanu zdrowia:
+- ciśnienie krwi
+- tętno
+- poziom cukru
+- temperatura ciała
+- liczba godzin snu
+- nastrój
+
+
+Cel zadania:
+- pomoc astronaucie w ocenie stanu zdrowia --> wizualizacja danych oraz dostarczenie wskazówek dot. leczenia i porawienia stanu zdrowia
+- zbieranie danych 
+- wykorzystanie baz danych do oceny stanu zdrowia oraz do zapobiegania wystąpienia stanu krytycznego
+- przejrzysta prezentacja danych programowych i prognoz
+
+
+Cele dodatkowe:
+- zapewnienie informacji stanu zdrowia w różnych środowiskach
+- zachęcenie do wykonywania pomiarów
+- grywalizacja
+- dynamiczne wykresy
+- kodowanie kolorami
+- dodanie wyłumaczenia i instrukcji dotyczących pomiarów, wskaźników zdrowia i zagrożeń
+
+
