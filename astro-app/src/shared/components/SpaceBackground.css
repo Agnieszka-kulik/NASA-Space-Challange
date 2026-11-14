@@ -1,0 +1,54 @@
+.space {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(90, 60, 180, 0.35), transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(30, 120, 200, 0.3), transparent 50%),
+    radial-gradient(ellipse at bottom, #0d1b3a 0%, #03040b 100%);
+}
+
+.space__stars {
+  position: absolute;
+  inset: -50%;
+  background-repeat: repeat;
+  animation: drift 120s linear infinite;
+  pointer-events: none;
+}
+
+.space__stars--small {
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+    radial-gradient(1px 1px at 90px 140px, #cfe0ff, transparent),
+    radial-gradient(1px 1px at 160px 60px, #fff, transparent),
+    radial-gradient(1px 1px at 230px 190px, #fff, transparent);
+  background-size: 250px 250px;
+  opacity: 0.8;
+}
+
+.space__stars--big {
+  background-image:
+    radial-gradient(2px 2px at 50px 80px, #fff, transparent),
+    radial-gradient(2px 2px at 300px 250px, #bcd4ff, transparent),
+    radial-gradient(1.5px 1.5px at 420px 60px, #fff, transparent);
+  background-size: 500px 500px;
+  animation-duration: 200s;
+  animation-name: drift, twinkle;
+  animation-iteration-count: infinite, infinite;
+  animation-timing-function: linear, ease-in-out;
+}
+
+.space__content {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(250px); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
