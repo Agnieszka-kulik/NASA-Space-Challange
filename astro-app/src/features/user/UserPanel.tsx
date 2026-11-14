@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 import SpaceBackground from '../../shared/components/SpaceBackground'
+import { ThemeToggle } from '../../shared/theme/ThemeContext'
 import PixelDuck, { DUCK_SPRITES, type DuckPresetId } from './components/PixelDuck'
 import TodoAccordion, { type TodoSection } from './components/TodoAccordion'
 import ShopSubpage, { type RewardItem } from './components/ShopSubpage'
@@ -579,6 +580,7 @@ return (
           <Link to="/user/stats" className="user-nav-link">
             📊 Statistics
           </Link>
+          <ThemeToggle />
         </div>
       </header>
 

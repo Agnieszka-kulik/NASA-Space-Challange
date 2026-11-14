@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import SpaceBackground from '../../shared/components/SpaceBackground'
+import { ThemeToggle } from '../../shared/theme/ThemeContext'
 import { newId, publish } from '../../shared/api/missionChannel'
 import ParameterPicker from './components/ParameterPicker'
 import CrewVitals from './components/CrewVitals'
@@ -112,15 +113,18 @@ export default function AdminPanel() {
           <div className="admin__mission">
             Mission <b>{MISSION.name}</b> · day <b>{MISSION.currentDay}</b> / {MISSION.lengthDays} · {location.full}
           </div>
-          <button
-            className="admin__btn"
-            onClick={() => {
-              setSeed(Math.floor(Math.random() * 100000))
-              setAcked(new Set())
-            }}
-          >
-            ⟳ Generate new data (mock)
-          </button>
+          <div className="admin__header-actions">
+            <ThemeToggle />
+            <button
+              className="admin__btn"
+              onClick={() => {
+                setSeed(Math.floor(Math.random() * 100000))
+                setAcked(new Set())
+              }}
+            >
+              ⟳ Generate new data (mock)
+            </button>
+          </div>
         </header>
 
         <ScenarioSimulator
