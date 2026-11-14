@@ -4,35 +4,10 @@ Repo na zawody NASA Space Challange
 Prezentacja
 
 1. Wstęp, nazwa teamu, wybrane wyzwanie
-DUCK AGH - rozwinięcie skrótu<br />
-D - Daily <br />
-U - Unified <br />
-C - Care <br />
-K - Keeper<br />
-Realizowany temat: Create Health Monitoring Software for Astronauts on Space Missions<br />
-Autorzy: Marta Komar, Agnieszka Kulik, Anna Sznajder, Joanna Wiencek<br />
 
-2. Napotkany problem oraz uzasadnienie wybrania powyższego wyzwania, aspekty innowacyjne w naszej aplikacji<br />
-Problem:
-- brak zmian wśród wykonywanych czynności
-- brak zmian otoczenia, ludzi i zadań (ubogość bodźców)
-- prowadzi do monotoności i złego samopoczucia psychniczego
-- poczucie samotności oraz frustracji
-- nie są medykami potrzebują ciągłego wsparcia w analizie i wykonywaniu pomiarów
-- brak natychmiastowej analizy danych – duża liczba parametrów biomedycznych utrudnia ich samodzielną interpretację i szybkie wykrywanie niepokojących zmian.
+DUCK AGH, Create Health Monitoring Software for Astronauts on Space Missions
 
-Rozwiązanie:
-- gamefikacja z wbudowanym inteligentnym zarządzaniem codziennymi zadaniami (zmienność zadań zdrowia psychicznego)
-- system nagród i ranking (za wykonywanie zadań)
-- system przypominania o pomiarach
-- wizualizacja zadań do wykoniania (TODO list)
-- profil admina-> analiza zbieranych danych (predykcja i klasyfikacja)
-- odpowiedni interface (dopasowanie kolorystyczne -> dark and light mode)
-- wykorzystanie baz danych do oceny stanu zdrowia oraz do zapobiegania wystąpienia stanu krytycznego
-- asystent AI i instrukcje wykonywania pomiarów
-
-
-
+2. Napotkany problem oraz uzasadnienie wybrania powyższego wyzwania, aspekty innowacyjne w naszej aplikacji
 
 Monotonność robienia pomiarów, mała atrakcyjność, uciążliwość, zapominanie o pomiarach, problem z prawidłową analizą wszystkich pomiarów biomedycznych, 
 - obniżenie czujności
@@ -42,8 +17,6 @@ Monotonność robienia pomiarów, mała atrakcyjność, uciążliwość, zapomin
 - ubogość zewnętrznego środowiska sensorycznego obniża poziom pobudzenia poznawczego --> bezpośredni spadek wydajności oraz błędów w rutynowych zadaniach --> zaangażowanie bodźców wizualnych w codziennych zadaniach https://ntrs.nasa.gov/api/citations/20120002722/downloads/20120002722.pdf
 - brak szybiej informacji zwrotnej żle wpływa na realizację zadania, staje się czysto formalne (brak zaangażowania)
 
-Izolacja i samotność (aspekty psychologiczne)
-
 Wykorzystanie gryfikacji oraz realnych nagród za wykonywanie rutynowych czynności
 - zwiększenie reguralności
 - biofeedback - wizualizacja trendów własnego organizmu oraz poczucie sensu
@@ -51,18 +24,14 @@ Wykorzystanie gryfikacji oraz realnych nagród za wykonywanie rutynowych czynno�
 - zastosowanie gier, feedback, śledzenie trendów, serii i celów zespołowych https://www.researchgate.net/publication/396662408_Game_Mechanics_in_Space_Leveraging_Gamification_to_Support_Crew_Performance_and_Resilience
 - zamienia suchy obowiązek w pętlę natychmiastowej informacji zwrotnej.
 
-
-
-
-
-3. Profil aplikacji widzany przez użytkownika
+3. Profil aplikacji widzany przez urzytkownika
 - statystyka
-- TODO lista 
+- TODO lista
 - stan samopoczucia i nawodnienia
 - poziom stresu
 - okna alarmowe, np. wysoki współczynnik stresu lub hałasu, należy zmienić miejsce wykonywania czynności
 
-4. Profil aplikacji widzany przez administratora / medical crew member
+4. Profil aplikacji widzany przez administratora
 - porównianie wszystkich uczestników misji
 - analiza warunków środowiskowych
 - aktualne parametry życiowe urzytkowników
