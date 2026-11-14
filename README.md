@@ -4,15 +4,15 @@ Repo na zawody NASA Space Challange
 Prezentacja
 
 1. Wstęp, nazwa teamu, wybrane wyzwanie
-DUCK AGH - rozwinięcie skrótu
-D - Daily
-U - Unified
-C - Care
-K - Keeper
-Realizowany temat: Create Health Monitoring Software for Astronauts on Space Missions
-Autorzy: Marta Komar, Agnieszka Kulik, Anna Sznajder, Joanna Wiencek
+DUCK AGH - rozwinięcie skrótu<br />
+D - Daily <br />
+U - Unified <br />
+C - Care <br />
+K - Keeper<br />
+Realizowany temat: Create Health Monitoring Software for Astronauts on Space Missions<br />
+Autorzy: Marta Komar, Agnieszka Kulik, Anna Sznajder, Joanna Wiencek<br />
 
-2. Napotkany problem oraz uzasadnienie wybrania powyższego wyzwania, aspekty innowacyjne w naszej aplikacji
+3. Napotkany problem oraz uzasadnienie wybrania powyższego wyzwania, aspekty innowacyjne w naszej aplikacji<br />
 Problem:
 - brak zmian wśród wykonywanych czynności
 - brak zmian otoczenia, ludzi i zadań (ubogość bodźców)
