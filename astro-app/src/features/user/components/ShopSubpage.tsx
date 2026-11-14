@@ -25,16 +25,16 @@ export default function ShopSubpage({
     <div className="user-subpage">
       <div className="user-subpage__top">
         <Link to="/user" className="user-back-btn">
-          ← Wróć do Panelu Astronauty
+          ← Back to Astronaut Panel
         </Link>
         <div className="user-points-pill">
-          ⭐ Twoje punkty: <strong>{points} pkt</strong>
+          ⭐ Your points: <strong>{points} pts</strong>
         </div>
       </div>
 
-      <h1 className="user-subpage__title">Sklep z Nagrodami dla Załogi</h1>
+      <h1 className="user-subpage__title">Crew Rewards Shop</h1>
       <p className="user-subpage__subtitle">
-        Wymieniaj punkty zdobyte za regularne pomiary, trening i minigierki na przekąski, filmy i czas wolny na stacji!
+        Exchange points earned from regular measurements, workouts, and cognitive minigames for snacks, movies, and station perks!
       </p>
 
       <div className="shop-grid">
@@ -48,20 +48,19 @@ export default function ShopSubpage({
               <p className="shop-card__desc">{item.description}</p>
               {item.claimedCount > 0 && (
                 <div className="shop-card__claimed">
-                  Odebrano już: <strong>{item.claimedCount}x</strong>
+                  Claimed: <strong>{item.claimedCount}x</strong>
                 </div>
               )}
               <button
                 type="button"
-                className={`shop-card__btn ${
-                  canAfford ? 'shop-card__btn--buy' : 'shop-card__btn--disabled'
-                }`}
+                className={`shop-card__btn ${canAfford ? 'shop-card__btn--buy' : 'shop-card__btn--disabled'
+                  }`}
                 disabled={!canAfford}
                 onClick={() => onClaimReward(item)}
               >
                 {canAfford
-                  ? `Odbierz za ${item.price} pkt`
-                  : `Brakuje ${item.price - points} pkt (Koszt: ${item.price} pkt)`}
+                ? `Claim for ${item.price} pts`
+                : `Need ${item.price - points} more pts (Cost: ${item.price} pts)`}
               </button>
             </div>
           )

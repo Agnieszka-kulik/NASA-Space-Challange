@@ -23,7 +23,7 @@ export interface DuckSprite {
 export const DUCK_SPRITES: DuckSprite[] = [
   {
     id: 'bezNoza',
-    label: 'Bez noża',
+    label: 'Calm',
     color: '#38bdf8',
     pattern: [
       '................................................',
@@ -82,7 +82,7 @@ export const DUCK_SPRITES: DuckSprite[] = [
   },
   {
     id: 'zNozem',
-    label: 'Z nożem',
+    label: 'With Knife',
     color: '#38bdf8',
     pattern: [
       '................................................',
@@ -141,7 +141,7 @@ export const DUCK_SPRITES: DuckSprite[] = [
   },
   {
     id: 'groznaZNozem',
-    label: 'Groźna z nożem',
+    label: 'Angry with Knife',
     color: '#ef4444',
     pattern: [
       '................................................',
@@ -200,7 +200,7 @@ export const DUCK_SPRITES: DuckSprite[] = [
   },
   {
     id: 'saturn',
-    label: 'Z Saturnem',
+    label: 'With Saturn',
     color: '#fbbf24',
     pattern: [
       '................................................',
@@ -259,7 +259,7 @@ export const DUCK_SPRITES: DuckSprite[] = [
   },
   {
     id: 'kosmita',
-    label: 'Kosmita',
+    label: 'Alien',
     color: '#a78bfa',
     pattern: [
       '..............###..............###..............',
@@ -318,7 +318,7 @@ export const DUCK_SPRITES: DuckSprite[] = [
   },
   {
     id: 'zSerduszkiem',
-    label: 'Z serduszkiem',
+    label: 'With Heart',
     color: '#f472b6',
     pattern: [
       '................................................',
@@ -377,7 +377,7 @@ export const DUCK_SPRITES: DuckSprite[] = [
   },
   {
     id: 'zmeczona',
-    label: 'Zmęczona',
+    label: 'Tired',
     color: '#94a3b8',
     pattern: [
       '................................................',
@@ -436,7 +436,7 @@ export const DUCK_SPRITES: DuckSprite[] = [
   },
   {
     id: 'obrazona',
-    label: 'Obrażona',
+    label: 'Grumpy',
     color: '#fb923c',
     pattern: [
       '................................................',
@@ -495,7 +495,7 @@ export const DUCK_SPRITES: DuckSprite[] = [
   },
   {
     id: 'martwa',
-    label: 'Martwa',
+    label: 'Critical',
     color: '#a1a1aa',
     pattern: [
       '................................................',
@@ -554,7 +554,7 @@ export const DUCK_SPRITES: DuckSprite[] = [
   },
   {
     id: 'pytajaca',
-    label: 'Pytająca',
+    label: 'Curious',
     color: '#c084fc',
     pattern: [
       '......................................####......',
