@@ -15,7 +15,7 @@ export default function Home() {
         <h1 className="home__title">Mission Control</h1>
         <div className="home__buttons">
           <button className="home__btn" onClick={() => navigate('/admin')}>
-            Admin
+            Crew Medical Officer
           </button>
           <button className="home__btn" onClick={() => navigate('/user')}>
             User
