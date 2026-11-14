@@ -44,17 +44,25 @@ export const CREW: CrewMember[] = [
     appearance: { skin: '#7a4a2c', hair: '#1a1a1a', hairStyle: 'curly' },
     // 🚨 This astronaut always shows problematic values (for the demo)
     anomalies: {
-      stress: 'critical',
-      fatigue: 'critical',
+      // isolation + poor sleep -> behavioral health & cardiovascular strain
       sleep: 'critical',
+      stress: 'critical',
+      mood: 'critical',
+      fatigue: 'warning',
       heartRate: 'warning',
-      temperature: 'warning',
-      reflex: 'warning',
-      memory: 'warning',
-      spo2: 'warning',
+      bloodPressure: 'warning',
     },
   },
-  { id: 'a6', name: 'Larsen', role: 'Mission Specialist', code: '057F', sensitivity: 0.95, appearance: { skin: '#f6d9c4', hair: '#d9b26f', hairStyle: 'short' } },
+  {
+    id: 'a6',
+    name: 'Larsen',
+    role: 'Mission Specialist',
+    code: '057F',
+    sensitivity: 0.95,
+    appearance: { skin: '#f6d9c4', hair: '#d9b26f', hairStyle: 'short' },
+    // skipped exercise sessions -> faster bone loss
+    anomalies: { boneDensity: 'critical' }, // trending toward critical; latest weekly scan shows a warning
+  },
 ]
 
 /** One chart point: mission day, measurement (if taken yet) and prediction */
@@ -65,6 +73,9 @@ export interface SeriesPoint {
   /** when the measurement was taken (ISO) */
   timestamp: string | null
   status: Status
+  /** scenario simulation (digital twin prediction) – only when a simulation is running */
+  simulated?: number | null
+  simStatus?: Status
 }
 
 // Seeded pseudo-random generator – the same data after a page refresh
@@ -82,7 +93,7 @@ const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
 const round = (v: number, d: number) => Number(v.toFixed(d))
 
 /** Target value a little past the given threshold, in the "bad" direction */
-function badTarget(param: ParamDef, level: Exclude<Status, 'ok'>) {
+export function badTarget(param: ParamDef, level: Exclude<Status, 'ok'>) {
   const { warning, critical, direction } = param.thresholds
   const sign = direction === 'high' ? 1 : -1
   const gap = Math.abs(critical - warning)
@@ -106,14 +117,16 @@ export function generateSeries(
   const anomalyStart = 7
   const points: SeriesPoint[] = []
 
-  for (let day = 0; day <= MISSION.lengthDays; day++) {
+  const maxDay = Math.max(MISSION.lengthDays, MISSION.currentDay + 30)
+  for (let day = 0; day <= maxDay; day++) {
     const progress = day / MISSION.lengthDays
     // saturation curve – faster changes early in the mission
     const predicted = param.baseline + param.drift * sensitivity * (1 - Math.exp(-3 * progress))
 
     let actual: number | null = null
     let timestamp: string | null = null
-    if (day <= MISSION.currentDay) {
+    const measuredToday = day % (param.everyDays ?? 1) === 0
+    if (day <= MISSION.currentDay && measuredToday) {
       actual = predicted + offset + (rand() - 0.5) * 2 * param.noise
       if (anomaly && day > anomalyStart) {
         const k = Math.min(1, (day - anomalyStart) / (MISSION.currentDay - anomalyStart))
@@ -147,10 +160,14 @@ export function generateAstronautSeries(member: CrewMember, seed: number) {
   )
 }
 
-/** The environment is shared by the whole station (sensitivity = 1) */
-export function generateEnvironment(seed: number) {
+/** The environment is shared by the whole station (sensitivity = 1); radiation depends on location */
+export function generateEnvironment(seed: number, radiationBaseline = 0.45) {
   return Object.fromEntries(
-    PARAMETERS.filter((p) => p.category === 'environment').map((p) => [p.id, generateSeries(p, 1, seed)]),
+    PARAMETERS.filter((p) => p.category === 'environment').map((p) => {
+      const scale = radiationBaseline / p.baseline
+      const def = p.id === 'radiation' ? { ...p, baseline: radiationBaseline, drift: p.drift * scale, noise: p.noise * scale } : p
+      return [p.id, generateSeries(def, 1, seed)]
+    }),
   )
 }
 

@@ -17,12 +17,15 @@ export const COLORS = {
   predicted: '#64748b',
   grid: 'rgba(148, 163, 184, 0.12)',
   axis: '#94a3b8',
+  simulated: '#c084fc',
 }
 
 interface Props {
   param: ParamDef
   data: SeriesPoint[]
   height?: number
+  /** mission days of the simulated event (shaded on the chart) */
+  simWindow?: { start: number; end: number } | null
 }
 
 interface TooltipProps {
@@ -124,7 +127,7 @@ export default function TrendChart({ param, data, height = 150 }: Props) {
             return <StatusDot key={index} cx={cx} cy={cy} payload={payload} />
           }}
           activeDot={{ r: 5, stroke: '#0b1426', strokeWidth: 2 }}
-          connectNulls={false}
+          connectNulls
         />
       </LineChart>
     </ResponsiveContainer>
