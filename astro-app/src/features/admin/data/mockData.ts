@@ -117,7 +117,8 @@ export function generateSeries(
   const anomalyStart = 7
   const points: SeriesPoint[] = []
 
-  for (let day = 0; day <= MISSION.lengthDays; day++) {
+  const maxDay = Math.max(MISSION.lengthDays, MISSION.currentDay + 30)
+  for (let day = 0; day <= maxDay; day++) {
     const progress = day / MISSION.lengthDays
     // saturation curve – faster changes early in the mission
     const predicted = param.baseline + param.drift * sensitivity * (1 - Math.exp(-3 * progress))

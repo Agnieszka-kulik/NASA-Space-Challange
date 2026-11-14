@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTheme } from '../../../shared/theme/ThemeContext'
 
 export type DuckPresetId =
   | 'bezNoza'
@@ -677,9 +678,25 @@ interface PixelDuckProps {
   scale?: number
 }
 
+const COZY_DUCK_COLORS: Record<DuckPresetId, string> = {
+  bezNoza: '#5F7456',
+  zNozem: '#B98970',
+  groznaZNozem: '#B85446',
+  saturn: '#7B6D8D',
+  kosmita: '#567A5E',
+  zSerduszkiem: '#B96A76',
+  zmeczona: '#9B7A49',
+  obrazona: '#B06C49',
+  martwa: '#7A786C',
+  pytajaca: '#5B7876',
+  cool: '#587650',
+}
+
 export default function PixelDuck({ presetId, scale = 5 }: PixelDuckProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const { theme } = useTheme()
   const sprite = DUCK_SPRITES.find((s) => s.id === presetId) || DUCK_SPRITES[0]
+  const activeColor = theme === 'cozy' ? COZY_DUCK_COLORS[sprite.id] || '#49483F' : sprite.color
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -699,22 +716,22 @@ export default function PixelDuck({ presetId, scale = 5 }: PixelDuckProps) {
       const row = sprite.pattern[y].padEnd(width, '.')
       for (let x = 0; x < width; x++) {
         if (row[x] === '#') {
-          ctx.fillStyle = sprite.color
+          ctx.fillStyle = activeColor
           ctx.fillRect(x * scale, y * scale, scale, scale)
         }
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)'
+        ctx.strokeStyle = theme === 'cozy' ? 'rgba(73, 72, 63, 0.055)' : 'rgba(255, 255, 255, 0.05)'
         ctx.strokeRect(x * scale, y * scale, scale, scale)
       }
     }
-  }, [sprite, scale])
+  }, [sprite, scale, activeColor, theme])
 
   return (
     <div
       className="oled-screen"
       style={
         {
-          '--oled-glow': `${sprite.color}33`,
-          '--oled-border': `${sprite.color}55`,
+          '--oled-glow': `${activeColor}33`,
+          '--oled-border': `${activeColor}55`,
         } as React.CSSProperties
       }
     >
