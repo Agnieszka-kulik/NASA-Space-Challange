@@ -1,0 +1,1 @@
+# aktywności	ACC, HR, BVP
