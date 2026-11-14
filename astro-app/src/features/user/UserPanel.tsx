@@ -6,7 +6,6 @@ import TodoAccordion, { type TodoSection } from './components/TodoAccordion'
 import ShopSubpage, { type RewardItem } from './components/ShopSubpage'
 import StatsSubpage, { MultiLineChart, type MoodLogEntry } from './components/StatsSubpage'
 import GuideSubpage, { EXAMINATION_GUIDES } from './components/GuideSubpage'
-import DuckChatSubpage from './components/DuckChatSubpage'
 import './UserPanel.css'
 
 const INITIAL_SECTIONS: TodoSection[] = [
@@ -567,9 +566,6 @@ return (
           <Link to="/user" className="user-nav-link">
             Dashboard
           </Link>
-          <Link to="/user/chat" className="user-nav-link">
-            💬 Duck AI Chat
-          </Link>
           <Link to="/user/guide" className="user-nav-link">
             📖 Task Guide
           </Link>
@@ -695,57 +691,8 @@ return (
                   </div>
                 </section>
 
-                {/* RIGHT COLUMN: AI Duck Chatbot -> Top 3 Leaderboard -> Mood Tracker -> Hydration -> Rewards Shop */}
+                {/* RIGHT COLUMN: Top 3 Leaderboard -> Mood Tracker -> Hydration -> Rewards Shop */}
                 <section className="hud-col hud-col--right">
-                  <div className="hud-card chatbot-hud-card">
-                    <div className="chatbot-hud-card__top">
-                      <div className="chatbot-hud-card__duck-avatar">
-                        <PixelDuck presetId={autoState.presetId} scale={1.35} />
-                      </div>
-                      <div className="chatbot-hud-card__info">
-                        <div className="chatbot-hud-card__title-row">
-                          <h3 className="hud-section-title">DUCK AI COMPANION CHAT</h3>
-                          <span className="chatbot-hud-card__badge">
-                            <span className="user-live-dot" /> AI ONLINE
-                          </span>
-                        </div>
-                        <p className="chatbot-hud-card__sub">
-                          Talk with your duck about mental health, physical wellness, or how to use the app.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="chatbot-hud-card__open-btn"
-                        onClick={() => navigate('/user/chat')}
-                      >
-                        💬 Talk to Duck →
-                      </button>
-                    </div>
-                    <div className="chatbot-topic-pills">
-                      <button
-                        type="button"
-                        className="chatbot-topic-pill"
-                        onClick={() => navigate('/user/chat?topic=mental')}
-                      >
-                        🧠 Mental Health & Stress
-                      </button>
-                      <button
-                        type="button"
-                        className="chatbot-topic-pill"
-                        onClick={() => navigate('/user/chat?topic=physical')}
-                      >
-                        💪 Physical Vitals & Sleep
-                      </button>
-                      <button
-                        type="button"
-                        className="chatbot-topic-pill"
-                        onClick={() => navigate('/user/chat?topic=app')}
-                      >
-                        📱 How the App Works
-                      </button>
-                    </div>
-                  </div>
-
                   <div className="hud-card leaderboard-hud-card">
                     <h3 className="hud-section-title">TOP 3 CREW WELLNESS LEADERBOARD</h3>
                     <div className="leaderboard-podium">
@@ -906,18 +853,6 @@ return (
           }
         />
         <Route path="/guide" element={<GuideSubpage />} />
-        <Route
-          path="/chat"
-          element={
-            <DuckChatSubpage
-              points={points}
-              waterGlasses={waterGlasses}
-              waterGoal={waterGoal}
-              overallScorePercent={overallScorePercent}
-              selectedMood={selectedMood}
-            />
-          }
-        />
       </Routes>
     </div>
   </SpaceBackground>

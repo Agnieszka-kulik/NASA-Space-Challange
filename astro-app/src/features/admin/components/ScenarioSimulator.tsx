@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react'
-import { CREW, MISSION, type SeriesPoint } from '../data/mockData'
+import { CREW, MISSION } from '../data/mockData'
 import { LOCATIONS, formatCountdown, formatDelay, type LocationId } from '../data/locations'
 import { remainingSec, useNow } from './useNow'
 import type { SentMessage } from '../data/alerts'
-import { STATUS_COLORS, STATUS_LABELS, getParam } from '../data/parameters'
+import { STATUS_COLORS, getParam } from '../data/parameters'
 import {
+  INTENSITY,
   SCENARIOS,
   MISSION_LOCATION,
   getScenario,
   simParams,
-  summarizeAtDay,
+  simWindow,
   type ImpactRow,
+  type Intensity,
   type SimulationConfig,
 } from '../data/simulation'
 
@@ -21,8 +22,6 @@ interface Props {
   onDraftChange: (cfg: SimulationConfig) => void
   active: SimulationConfig | null
   results: ImpactRow[]
-  simCrew: Record<string, Record<string, SeriesPoint[]>>
-  simEnvironment: Record<string, SeriesPoint[]>
   onRun: () => void
   onStop: () => void
   onSendPlan: (rows: ImpactRow[]) => void
@@ -30,415 +29,225 @@ interface Props {
   onSelectAstronaut: (id: string) => void
   /** last report sent to Earth from the simulator (for the countdown) */
   earthMessage: SentMessage | null
-  /** all messages triggered from the simulator */
-  simMessages?: SentMessage[]
   timeScale: number
-  onTimeScale?: (scale: number) => void
 }
 
-const sameConfig = (a: SimulationConfig | null, b: SimulationConfig) =>
-  a !== null &&
-  a.scenarioId === b.scenarioId &&
-  a.locationId === b.locationId &&
-  a.duration === b.duration
+const sameConfig = (a: SimulationConfig | null, b: SimulationConfig) => a !== null && JSON.stringify(a) === JSON.stringify(b)
 
 export default function ScenarioSimulator(props: Props) {
-  const {
-    open,
-    onToggle,
-    draft,
-    onDraftChange,
-    active,
-    simCrew,
-    simEnvironment,
-    onRun,
-    onStop,
-    onConsultEarth,
-    onSelectAstronaut,
-    earthMessage,
-    timeScale,
-  } = props
-
-  const [scenarioDropdownOpen, setScenarioDropdownOpen] = useState(false)
-  const [inspectedDay, setInspectedDay] = useState(1)
+  const { open, onToggle, draft, onDraftChange, active, results, onRun, onStop, onSendPlan, onConsultEarth, onSelectAstronaut, earthMessage, timeScale } = props
   const now = useNow()
-
   const draftLoc = LOCATIONS[draft.locationId]
-  const activeLoc = active ? LOCATIONS[active.locationId] : draftLoc
+  const activeLoc = active ? LOCATIONS[active.locationId] : null
   const scenario = getScenario(draft.scenarioId)
   const running = active !== null
   const activeScenario = active ? getScenario(active.scenarioId) : null
   const dirty = running && !sameConfig(active, draft)
-  const set = (patch: Partial<SimulationConfig>) =>
-    onDraftChange({ ...draft, startIn: 0, ...patch })
+  const set = (patch: Partial<SimulationConfig>) => onDraftChange({ ...draft, ...patch })
 
-  const maxSimDays = active ? active.duration : draft.duration
-
-  // Clamp inspectedDay whenever active duration changes
-  useEffect(() => {
-    if (active && inspectedDay > active.duration) {
-      setInspectedDay(active.duration)
-    }
-  }, [active, inspectedDay])
-
-  // Compute day-specific results for the currently selected slider day
-  const dayResults: ImpactRow[] =
-    running && active
-      ? summarizeAtDay(active, simCrew, simEnvironment, inspectedDay)
-      : []
-
-  const crewRows = dayResults.filter((r) => r.id !== 'station')
-  const atRisk = crewRows.filter((r) => r.worst !== 'ok')
-  const criticalCount = crewRows.filter((r) => r.worst === 'critical').length
-  const warningCount = crewRows.filter((r) => r.worst === 'warning').length
-  const safeCount = crewRows.filter((r) => r.worst === 'ok').length
-
-  const currentMissionDay = MISSION.currentDay + inspectedDay - 1
+  const atRisk = results.filter((r) => r.id !== 'station' && r.worst !== 'ok')
+  const critical = results.filter((r) => r.worst === 'critical').length
+  const warning = results.filter((r) => r.worst === 'warning').length
+  const { start } = simWindow(draft)
 
   return (
     <section className={`sim ${running ? 'sim--running' : ''} ${open ? 'sim--open' : ''}`}>
       {/* ---------- header bar (always visible) ---------- */}
       <button className="sim__bar" onClick={onToggle} aria-expanded={open}>
-        <span className="sim__icon">🛰️</span>
+        <span className="sim__icon">🔮</span>
         <span className="sim__title">
           Scenario simulator
-          <small>Digital twin predictions · day-by-day what-if analysis for the whole crew</small>
+          <small>Digital twin predictions · what-if analysis for the whole crew</small>
         </span>
         {running && activeScenario ? (
           <span className="sim__status sim__status--running">
             <span className="sim__dot" /> SIMULATION RUNNING · {activeScenario.icon} {activeScenario.title} ·{' '}
-            {activeLoc!.name} · {active!.duration} days · Day {inspectedDay}: {criticalCount} crit / {warningCount} warn
+            {INTENSITY[active!.intensity].label.toLowerCase()} · {activeLoc!.name} · {critical} critical / {warning} warning predicted
           </span>
         ) : (
-          <span className="sim__status">○ Idle — expand to configure & run a what-if scenario</span>
+          <span className="sim__status">○ Idle — expand to run a what-if scenario</span>
         )}
-        <span className="sim__chevron">{open ? '▴ Collapse' : '▾ Expand'}</span>
+        <span className="sim__chevron">{open ? '▴' : '▾'}</span>
       </button>
 
       {open && (
-        <div className="sim__body-2col">
-          {/* =====================================================================
-             LEFT COLUMN: 1. Collapsible Scenario Selector + 2. Location & Mission Duration
-             ===================================================================== */}
-          <div className="sim__left-col">
-            {/* ---------- 1. Collapsible Scenario Picker ---------- */}
-            <div className="sim-box">
-              <div className="sim-box__head">
-                <h3 className="sim__step">1 · Choose Scenario</h3>
-                <span className="sim-box__badge">{SCENARIOS.length} presets</span>
-              </div>
-
-              <button
-                type="button"
-                className={`sim-selector-trigger ${scenarioDropdownOpen ? 'sim-selector-trigger--open' : ''}`}
-                onClick={() => setScenarioDropdownOpen((v) => !v)}
-              >
-                <span className="sim-selector-trigger__icon">{scenario.icon}</span>
-                <div className="sim-selector-trigger__info">
-                  <div className="sim-selector-trigger__top">
-                    <b>{scenario.title}</b>
-                    <span className="sim-selector-trigger__action">
-                      {scenarioDropdownOpen ? 'Hide ▴' : 'Change ▾'}
-                    </span>
-                  </div>
-                  <small>{scenario.description}</small>
-                </div>
-              </button>
-
-              {scenarioDropdownOpen && (
-                <div className="sim-scenarios-drawer">
-                  {SCENARIOS.map((s) => {
-                    const isSelected = s.id === draft.scenarioId
-                    return (
-                      <button
-                        type="button"
-                        key={s.id}
-                        className={`sim-card ${isSelected ? 'sim-card--on' : ''}`}
-                        onClick={() => {
-                          set({ scenarioId: s.id })
-                          setScenarioDropdownOpen(false)
-                        }}
-                      >
-                        <span className="sim-card__icon">{s.icon}</span>
-                        <div className="sim-card__content">
-                          <div className="sim-card__title-row">
-                            <b>{s.title}</b>
-                            {isSelected && <span className="sim-card__active-pill">Selected</span>}
-                          </div>
-                          <small>{s.description}</small>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* ---------- 2. Simulation Parameters: ONLY Location & Mission Duration ---------- */}
-            <div className="sim-box">
-              <div className="sim-box__head">
-                <h3 className="sim__step">2 · Set Parameters</h3>
-              </div>
-
-              <div className="sim__field">
-                <div className="sim__field-label-row">
-                  <span>Mission location</span>
-                  {draft.locationId === MISSION_LOCATION && (
-                    <small className="sim__tag-current">Current mission</small>
-                  )}
-                </div>
-                <div className="seg seg--full">
-                  {(Object.keys(LOCATIONS) as LocationId[]).map((k) => (
-                    <button
-                      type="button"
-                      key={k}
-                      className={`seg__btn ${draft.locationId === k ? 'seg__btn--active' : ''}`}
-                      onClick={() => set({ locationId: k })}
-                      title={LOCATIONS[k].full}
-                    >
-                      {LOCATIONS[k].name}
-                    </button>
-                  ))}
-                </div>
-                <div className="sim__loc-cards">
-                  <div className="sim__loc-pill">
-                    <span>📡 One-way</span>
-                    <b>{formatDelay(draftLoc.delaySec)}</b>
-                  </div>
-                  <div className="sim__loc-pill">
-                    <span>🪐 Gravity</span>
-                    <b>{draftLoc.gravity}</b>
-                  </div>
-                  <div className="sim__loc-pill">
-                    <span>☢️ Radiation</span>
-                    <b>{draftLoc.radiation} mSv/d</b>
-                  </div>
-                </div>
-              </div>
-
-              <label className="sim__field sim__slider-card">
-                <div className="sim__field-label-row">
-                  <span>Mission duration</span>
-                  <b className="sim__slider-val">{draft.duration} days</b>
-                </div>
-                <input
-                  type="range"
-                  className="hud-range-slider"
-                  min={3}
-                  max={30}
-                  value={draft.duration}
-                  onChange={(e) => set({ duration: Number(e.target.value) })}
-                />
-                <div className="sim__slider-ticks">
-                  <span>3 d</span>
-                  <span>15 d</span>
-                  <span>30 d</span>
-                </div>
-              </label>
-
-              <div className="sim__actions">
+        <div className="sim__body">
+          {/* ---------- 1. scenario ---------- */}
+          <div className="sim__col">
+            <h3 className="sim__step">1 · Choose scenario</h3>
+            <div className="sim__scenarios">
+              {SCENARIOS.map((s) => (
                 <button
-                  className="sim__run"
-                  onClick={() => {
-                    setInspectedDay(1)
-                    onRun()
-                  }}
-                  disabled={running && !dirty}
+                  key={s.id}
+                  className={`sim-card ${s.id === draft.scenarioId ? 'sim-card--on' : ''}`}
+                  onClick={() => set({ scenarioId: s.id, duration: s.defaultDuration, countermeasures: [] })}
                 >
-                  {running
-                    ? dirty
-                      ? '↻ Re-run simulation'
-                      : '✓ Simulation Active'
-                    : '▶ Run Simulation'}
+                  <span className="sim-card__icon">{s.icon}</span>
+                  <span>
+                    <b>{s.title}</b>
+                    <small>{s.description}</small>
+                  </span>
                 </button>
-                {running && (
-                  <button className="sim__stop" onClick={onStop}>
-                    ■ Stop
-                  </button>
-                )}
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* =====================================================================
-             RIGHT COLUMN: 3. Day Slider -> Table -> Bottom Row (Crew Counts + Compact Earth Comms)
-             ===================================================================== */}
-          <div className="sim__right-col">
-            <div className="sim-box sim-box--results">
-              <div className="sim-box__head">
-                <h3 className="sim__step">3 · Predicted Crew & Station Response</h3>
+          {/* ---------- 2. parameters ---------- */}
+          <div className="sim__col">
+            <h3 className="sim__step">2 · Set parameters</h3>
+
+            <div className="sim__field">
+              <span>
+                Mission location {draft.locationId === MISSION_LOCATION && <small>(current mission)</small>}
+              </span>
+              <div className="seg">
+                {(Object.keys(LOCATIONS) as LocationId[]).map((k) => (
+                  <button key={k} className={`seg__btn ${draft.locationId === k ? 'seg__btn--active' : ''}`} onClick={() => set({ locationId: k })} title={LOCATIONS[k].full}>
+                    {LOCATIONS[k].name}
+                  </button>
+                ))}
               </div>
+              <div className="sim__loc">
+                <span>📡 Earth link <b>{formatDelay(draftLoc.delaySec)}</b> one-way{draftLoc.delayNote && <small> ({draftLoc.delayNote})</small>}</span>
+                <span>Gravity <b>{draftLoc.gravity}</b></span>
+                <span>Radiation <b>{draftLoc.radiation} mSv/d</b></span>
+              </div>
+            </div>
 
-              {!running ? (
-                <div className="sim-empty-state">
-                  <div className="sim-empty-state__icon">🛰️</div>
-                  <h4>Digital Twin Simulator is Ready</h4>
-                  <p>
-                    Choose a scenario, mission location, and mission duration on the left, then click <b>▶ Run Simulation</b> to inspect every astronaut’s parameters day by day.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {/* Interactive Day-by-Day Scrubber Control (single uniform color) */}
-                  <div className="sim-day-scrubber">
-                    <div className="sim-day-scrubber__top">
-                      <div className="sim-day-scrubber__title">
-                        <span className="sim-day-scrubber__badge">🗓️ MISSION TIMELINE</span>
-                        <strong>
-                          Day {inspectedDay} <small>of {maxSimDays} (Mission day {currentMissionDay})</small>
-                        </strong>
-                      </div>
-                      <div className="sim-day-scrubber__btns">
-                        <button
-                          type="button"
-                          className="sim-day-step-btn"
-                          disabled={inspectedDay <= 1}
-                          onClick={() => setInspectedDay((d) => Math.max(1, d - 1))}
-                        >
-                          ◀ Prev
-                        </button>
-                        <button
-                          type="button"
-                          className="sim-day-step-btn"
-                          disabled={inspectedDay >= maxSimDays}
-                          onClick={() => setInspectedDay((d) => Math.min(maxSimDays, d + 1))}
-                        >
-                          Next ▶
-                        </button>
-                      </div>
-                    </div>
+            <div className="sim__field">
+              <span>Intensity</span>
+              <div className="seg">
+                {(Object.keys(INTENSITY) as Intensity[]).map((k) => (
+                  <button key={k} className={`seg__btn ${draft.intensity === k ? 'seg__btn--active' : ''}`} onClick={() => set({ intensity: k })}>
+                    {INTENSITY[k].label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-                    <input
-                      type="range"
-                      className="hud-range-slider hud-range-slider--day"
-                      min={1}
-                      max={maxSimDays}
-                      value={inspectedDay}
-                      onChange={(e) => setInspectedDay(Number(e.target.value))}
-                    />
+            <label className="sim__field">
+              <span>
+                Starts in <b>{draft.startIn === 0 ? 'today' : `${draft.startIn} d`}</b> <small>(mission day {start})</small>
+              </span>
+              <input type="range" min={0} max={7} value={draft.startIn} onChange={(e) => set({ startIn: Number(e.target.value) })} />
+            </label>
 
-                    <div className="sim__slider-ticks">
-                      <span>Day 1</span>
-                      <span>Day {Math.max(1, Math.round(maxSimDays / 2))}</span>
-                      <span>Day {maxSimDays}</span>
-                    </div>
-                  </div>
+            <label className="sim__field">
+              <span>
+                Duration <b>{draft.duration} d</b>
+              </span>
+              <input type="range" min={1} max={10} value={draft.duration} onChange={(e) => set({ duration: Number(e.target.value) })} />
+            </label>
 
-                  {/* Compact, Clear Impact Matrix for the Selected Day */}
-                  <div className="impact impact--large">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th className="impact__th-who">Crew / Target</th>
-                          <th className="impact__th-overall">Status (Day {inspectedDay})</th>
+            <div className="sim__field">
+              <span>Countermeasures (prevention)</span>
+              {scenario.countermeasures.map((c) => (
+                <label key={c.id} className="sim__check">
+                  <input
+                    type="checkbox"
+                    checked={draft.countermeasures.includes(c.id)}
+                    onChange={(e) =>
+                      set({
+                        countermeasures: e.target.checked
+                          ? [...draft.countermeasures, c.id]
+                          : draft.countermeasures.filter((x) => x !== c.id),
+                      })
+                    }
+                  />
+                  {c.label}
+                </label>
+              ))}
+            </div>
+
+            <div className="sim__actions">
+              <button className="sim__run" onClick={onRun} disabled={running && !dirty}>
+                {running ? (dirty ? '↻ Re-run with new settings' : '✓ Simulation up to date') : '▶ Run simulation'}
+              </button>
+              {running && (
+                <button className="sim__stop" onClick={onStop}>
+                  ■ Stop
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* ---------- 3. results ---------- */}
+          <div className="sim__col sim__col--results">
+            <h3 className="sim__step">3 · Predicted crew response</h3>
+            {!running ? (
+              <p className="empty">
+                Run a simulation to see how each astronaut’s digital twin is predicted to react. Real measurements are never changed –
+                predictions appear as a separate <span className="sim-text">violet line</span> on the charts.
+              </p>
+            ) : (
+              <>
+                <p className="sim__summary">
+                  {atRisk.length === 0 ? (
+                    <>✓ No astronaut is predicted to leave the safe range.</>
+                  ) : (
+                    <>
+                      <b>{atRisk.length}</b> of {CREW.length} astronauts predicted to leave the safe range. Most at risk:{' '}
+                      <b>{[...atRisk].sort((a, b) => (a.worst === 'critical' ? -1 : 1) - (b.worst === 'critical' ? -1 : 1))[0].name}</b>.
+                    </>
+                  )}
+                </p>
+                <div className="impact">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th />
+                        {simParams(active!).map((id) => (
+                          <th key={id}>{getParam(id).label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results.map((r) => (
+                        <tr key={r.id}>
+                          <th>
+                            {r.id === 'station' ? (
+                              'Station'
+                            ) : (
+                              <button className="impact__who" onClick={() => onSelectAstronaut(r.id)}>
+                                {r.name}
+                              </button>
+                            )}
+                          </th>
                           {simParams(active!).map((id) => {
-                            const p = getParam(id)
-                            const dir = p.thresholds.direction === 'high' ? '≥' : '≤'
+                            const c = r.cells.find((x) => x.paramId === id)
+                            if (!c) return <td key={id} className="impact__na">–</td>
                             return (
-                              <th key={id} className="impact__th-param">
-                                <div className="impact__param-name">
-                                  {p.label} <span className="impact__param-unit">({p.unit})</span>
-                                </div>
-                                <div className="impact__param-limits">
-                                  <span className="limit-warn">⚠ {dir}{p.thresholds.warning}</span>
-                                  <span className="limit-crit">✖ {dir}{p.thresholds.critical}</span>
-                                </div>
-                              </th>
+                              <td key={id} className={`impact__cell impact__cell--${c.status}`} title={c.firstBadDay ? `Crosses into ${c.status} on mission day ${c.firstBadDay}` : 'Stays in safe range'}>
+                                <b style={{ color: c.status === 'ok' ? undefined : STATUS_COLORS[c.status] }}>
+                                  {c.status === 'critical' ? '✖ ' : c.status === 'warning' ? '⚠ ' : ''}
+                                  {c.peak.toFixed(getParam(id).decimals)}
+                                </b>
+                                {c.firstBadDay !== null && <small>day {c.firstBadDay}</small>}
+                              </td>
                             )
                           })}
                         </tr>
-                      </thead>
-                      <tbody>
-                        {dayResults.map((r) => {
-                          const memberObj = CREW.find((c) => c.id === r.id)
-                          return (
-                            <tr key={r.id} className={`impact__row impact__row--${r.worst}`}>
-                              <th className="impact__who-cell">
-                                {r.id === 'station' ? (
-                                  <div className="impact__station-label">
-                                    <span className="impact__who-icon">🛰️</span>
-                                    <div>
-                                      <b>Station Habitat</b>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    className="impact__who-btn"
-                                    onClick={() => onSelectAstronaut(r.id)}
-                                    title="Click to inspect this astronaut's charts below"
-                                  >
-                                    <span className="impact__who-icon">👨‍🚀</span>
-                                    <div>
-                                      <b>{r.name}</b>
-                                      <small>{memberObj ? memberObj.role : ''}</small>
-                                    </div>
-                                  </button>
-                                )}
-                              </th>
-
-                              <td className="impact__overall-cell">
-                                <span className={`impact-status-pill impact-status-pill--${r.worst}`}>
-                                  {STATUS_LABELS[r.worst]}
-                                </span>
-                              </td>
-
-                              {simParams(active!).map((id) => {
-                                const p = getParam(id)
-                                const c = r.cells.find((x) => x.paramId === id)
-                                if (!c) return <td key={id} className="impact__na">—</td>
-                                return (
-                                  <td
-                                    key={id}
-                                    className={`impact__cell impact__cell--${c.status}`}
-                                  >
-                                    <div className="impact__val-row">
-                                      <b style={{ color: STATUS_COLORS[c.status] }}>
-                                        {c.peak.toFixed(p.decimals)}
-                                      </b>
-                                      <span className="impact__val-unit">{p.unit}</span>
-                                    </div>
-                                  </td>
-                                )
-                              })}
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Bottom Row UNDER Table: Left = Crew Status Summary, Right = Compact Earth Report Dispatch */}
-                  <div className="sim-bottom-bar">
-                    <div className="sim-kpi-row">
-                      <div className="sim-kpi-card sim-kpi-card--ok">
-                        <span className="sim-kpi-card__label">SAFE (DAY {inspectedDay})</span>
-                        <strong className="sim-kpi-card__val">{safeCount} / {CREW.length}</strong>
-                      </div>
-                      <div className="sim-kpi-card sim-kpi-card--warning">
-                        <span className="sim-kpi-card__label">WARNING</span>
-                        <strong className="sim-kpi-card__val">{warningCount}</strong>
-                      </div>
-                      <div className="sim-kpi-card sim-kpi-card--critical">
-                        <span className="sim-kpi-card__label">CRITICAL</span>
-                        <strong className="sim-kpi-card__val">{criticalCount}</strong>
-                        {atRisk.length > 0 && (
-                          <small>At risk: {atRisk.map((a) => a.name).join(', ')}</small>
-                        )}
-                      </div>
-                    </div>
-
-                    <CompactEarthDispatch
-                      loc={activeLoc!}
-                      earthMessage={earthMessage}
-                      now={now}
-                      timeScale={timeScale}
-                      onConsultEarth={onConsultEarth}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="impact__note">
+                  Peak predicted value during/after the event (mission day {MISSION.currentDay} = today). Personal response depends on
+                  each astronaut’s sensitivity and current condition.
+                </p>
+                <div className="sim__buttons">
+                  {atRisk.length > 0 && (
+                    <button className="sim__plan" onClick={() => onSendPlan(atRisk)}>
+                      📨 Send preventive plan to at-risk crew ({atRisk.length})
+                    </button>
+                  )}
+                  <button className="sim__plan sim__plan--earth" onClick={onConsultEarth}>
+                    📡 Send report to flight surgeons on Earth
+                  </button>
+                </div>
+                <EarthLink loc={activeLoc!} message={earthMessage} now={now} timeScale={timeScale} />
+              </>
+            )}
           </div>
         </div>
       )}
@@ -446,78 +255,34 @@ export default function ScenarioSimulator(props: Props) {
   )
 }
 
-/**
- * Compact Side Box for Sending & Tracking Earth Consultation Reports
- */
-function CompactEarthDispatch({
-  loc,
-  earthMessage,
-  now,
-  timeScale,
-  onConsultEarth,
-}: {
-  loc: (typeof LOCATIONS)[LocationId]
-  earthMessage: SentMessage | null
-  now: number
-  timeScale: number
-  onConsultEarth: () => void
-}) {
+/** Shows how long a consultation with Earth would take at the simulated location */
+function EarthLink({ loc, message, now, timeScale }: { loc: (typeof LOCATIONS)[LocationId]; message: SentMessage | null; now: number; timeScale: number }) {
   const oneWay = loc.delaySec
-  const toEarth = earthMessage ? remainingSec(earthMessage.sentAt, earthMessage.delaySec, now, timeScale) : 0
-  const replyLeft = earthMessage ? remainingSec(earthMessage.sentAt, earthMessage.delaySec * 2, now, timeScale) : 0
-  const totalWindow = earthMessage ? earthMessage.delaySec * 2 : 0
-  const progressPct =
-    !earthMessage || totalWindow === 0
-      ? 0
-      : Math.min(100, Math.max(5, Math.round((1 - replyLeft / totalWindow) * 100)))
-
-  let statusText = `One-way: ${formatDelay(oneWay)} · Reply: ${formatDelay(oneWay * 2)}`
-  let badgeText = 'Ready'
-  let statusClass = 'idle'
-
-  if (earthMessage) {
-    if (toEarth > 0) {
-      badgeText = `🚀 In transit (${formatCountdown(toEarth)})`
-      statusText = `Arrives on Earth in ${formatCountdown(toEarth)} · Reply in ${formatCountdown(replyLeft)}`
-      statusClass = 'transit'
-    } else if (replyLeft > 0) {
-      badgeText = `📥 Delivered · Reply in ${formatCountdown(replyLeft)}`
-      statusText = `Received on Earth · Flight surgeons' reply in ${formatCountdown(replyLeft)}`
-      statusClass = 'waiting'
-    } else {
-      badgeText = '✅ Delivered & Reply Ready'
-      statusText = 'Consultation report delivered & reply received.'
-      statusClass = 'delivered'
-    }
-  }
+  const toEarth = message ? remainingSec(message.sentAt, message.delaySec, now, timeScale) : 0
+  const reply = message ? remainingSec(message.sentAt, message.delaySec * 2, now, timeScale) : 0
 
   return (
-    <div className={`sim-earth-side sim-earth-side--${statusClass}`}>
-      <div className="sim-earth-side__top">
-        <span className="sim-earth-side__title">📡 Earth Link ({loc.name})</span>
-        <span className={`sim-msg-status-pill sim-msg-status-pill--${statusClass === 'idle' ? 'waiting' : statusClass}`}>
-          {badgeText}
-        </span>
+    <div className={`earth ${oneWay > 60 ? 'earth--far' : ''}`}>
+      <div className="earth__head">
+        📡 Earth support at <b>{loc.name}</b>: one-way <b>{formatDelay(oneWay)}</b>, fastest possible answer <b>{formatDelay(oneWay * 2)}</b>
       </div>
-
-      <div className="sim-earth-side__sub">{statusText}</div>
-
-      {earthMessage && (
-        <div className="sim-msg-progress-track">
-          <div
-            className={`sim-msg-progress-fill sim-msg-progress-fill--${statusClass === 'idle' ? 'waiting' : statusClass}`}
-            style={{ width: `${progressPct}%` }}
-          />
+      {message ? (
+        <div className="earth__status">
+          {toEarth > 0 ? (
+            <>Report <b>arrives on Earth in {formatCountdown(toEarth)}</b> · earliest reply in {formatCountdown(reply)}</>
+          ) : reply > 0 ? (
+            <>✓ Report received on Earth · <b>earliest reply in {formatCountdown(reply)}</b></>
+          ) : (
+            <>✓ Report received · ✉ reply from flight surgeons could arrive now</>
+          )}
+        </div>
+      ) : (
+        <div className="earth__status earth__status--hint">
+          {oneWay > 60
+            ? 'Ground cannot respond in real time – the onboard Crew Medical Officer must act first.'
+            : 'Near real-time contact – flight surgeons can support the crew live.'}
         </div>
       )}
-
-      <button
-        type="button"
-        className="sim__plan sim__plan--earth sim-earth-side__btn"
-        onClick={onConsultEarth}
-      >
-        📡 Send Report to Earth ({formatDelay(oneWay)})
-      </button>
     </div>
   )
 }

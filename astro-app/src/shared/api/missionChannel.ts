@@ -28,6 +28,18 @@ export type MissionMessage =
       deliverAt: number
     }
   | {
+      /** astronaut -> Crew Medical Officer (sent from the digital twin page) */
+      type: 'crew-report'
+      id: string
+      astronautId: string
+      systemId: string
+      text: string
+      /** optional photo (data URL) attached by the astronaut */
+      photo?: string
+      sentAt: number
+      deliverAt: number
+    }
+  | {
       type: 'location'
       id: string
       locationId: string

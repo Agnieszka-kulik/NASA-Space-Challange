@@ -7,11 +7,11 @@ import CrewVitals from './components/CrewVitals'
 import ScenarioSimulator from './components/ScenarioSimulator'
 import AlertQueue from './components/AlertQueue'
 import CommsLog from './components/CommsLog'
-import TrendChart, { ChartLegend, ChartStatusBadge } from './components/TrendChart'
+import TrendChart, { ChartLegend, ChartSimBadge, ChartStatusBadge } from './components/TrendChart'
 import { DEFAULT_SELECTED, PARAMETERS, STATUS_LABELS, worstStatus, type ParamDef } from './data/parameters'
 import { CREW, MISSION, generateAstronautSeries, generateEnvironment, latestStatus, type SeriesPoint } from './data/mockData'
 import { LOCATIONS } from './data/locations'
-import { MISSION_LOCATION, getScenario, simulateAll, summarize, type ImpactRow, type SimulationConfig } from './data/simulation'
+import { MISSION_LOCATION, getScenario, simWindow, simulateAll, summarize, type ImpactRow, type SimulationConfig } from './data/simulation'
 import { RECOMMENDATIONS } from './data/recommendations'
 import { buildAlerts, type Alert, type SentMessage } from './data/alerts'
 import './AdminPanel.css'
@@ -24,8 +24,8 @@ export default function AdminPanel() {
   const [simDraft, setSimDraft] = useState<SimulationConfig>({
     scenarioId: 'sleep',
     intensity: 'moderate',
-    duration: 14,
-    startIn: 0,
+    duration: 4,
+    startIn: 1,
     countermeasures: [],
     locationId: MISSION_LOCATION,
   })
@@ -50,14 +50,16 @@ export default function AdminPanel() {
   )
   const alerts = useMemo(() => buildAlerts(crewSeries, environment), [crewSeries, environment])
 
-  // digital twin predictions for the running simulation (used inside ScenarioSimulator)
+  // digital twin predictions for the running simulation (added as a separate `simulated` value)
   const simEnvironment = useMemo(() => simulateAll(environment, simActive), [environment, simActive])
   const simCrew = useMemo(
     () => Object.fromEntries(CREW.map((m) => [m.id, simulateAll(crewSeries[m.id], simActive, m)])),
     [crewSeries, simActive],
   )
   const simResults = useMemo<ImpactRow[]>(() => (simActive ? summarize(simActive, simCrew, simEnvironment) : []), [simActive, simCrew, simEnvironment])
-  const astronautSeries = crewSeries[astronaut.id]
+  const predicted = simActive ? Object.fromEntries(simResults.filter((r) => r.id !== 'station').map((r) => [r.id, r.worst])) : null
+  const window = simActive ? simWindow(simActive) : null
+  const astronautSeries = simCrew[astronaut.id]
   const astronautStatus = trendStatus[astronaut.id]
 
   // ---------- actions ----------
@@ -130,19 +132,20 @@ export default function AdminPanel() {
           onDraftChange={setSimDraft}
           active={simActive}
           results={simResults}
-          simCrew={simCrew}
-          simEnvironment={simEnvironment}
-          onRun={() => setSimActive({ ...simDraft, startIn: 0 })}
+          onRun={() => setSimActive(simDraft)}
           onStop={() => setSimActive(null)}
           onSendPlan={sendPreventivePlan}
           onConsultEarth={consultEarth}
           onSelectAstronaut={setAstronautId}
           earthMessage={earthMessage}
-          simMessages={messages.filter((m) => m.sim)}
           timeScale={timeScale}
-          onTimeScale={setTimeScale}
         />
-
+        {simActive && (
+          <div className="sim-mode">
+            🔮 <b>SIMULATION MODE</b> — violet lines, rings and “🔮” labels are digital twin predictions for a what-if scenario, not real
+            measurements. Alerts on the left are based on real data only.
+          </div>
+        )}
 
         <div className="admin__grid">
           <div className="admin__left">
@@ -160,16 +163,16 @@ export default function AdminPanel() {
           </div>
 
           <div className="admin__middle">
-            <CrewVitals selectedId={astronautId} onSelect={setAstronautId} trendStatus={trendStatus} />
+            <CrewVitals selectedId={astronautId} onSelect={setAstronautId} trendStatus={trendStatus} predicted={predicted} />
 
             <section className="panel">
               <h2 className="panel__title">Station environment</h2>
               <ParameterPicker category="environment" selected={selectedParams} onToggle={toggleParam} />
-              <ChartLegend />
+              <ChartLegend simulating={!!simActive} />
               {envParams.length === 0 && <p className="empty">Select environment parameters above.</p>}
               <div className="env-grid">
                 {envParams.map((p) => (
-                  <ChartCard key={p.id} param={p} data={environment[p.id]} height={120} />
+                  <ChartCard key={p.id} param={p} data={simEnvironment[p.id]} height={120} window={window} />
                 ))}
               </div>
             </section>
@@ -179,6 +182,9 @@ export default function AdminPanel() {
             <h2 className="panel__title">
               Astronaut parameters: <span className="accent">{astronaut.name}</span>
               <small> ({astronaut.role}, {astronaut.code}) — click a crew card or alert to switch</small>
+              <Link to={`/twin/${astronaut.id}`} className="twin-link">
+                🧬 Open digital twin →
+              </Link>
             </h2>
             {astronautStatus !== 'ok' && (
               <div className={`alert alert--${astronautStatus}`}>
@@ -193,11 +199,11 @@ export default function AdminPanel() {
               </div>
             )}
             <ParameterPicker category="astronaut" selected={selectedParams} onToggle={toggleParam} />
-            <ChartLegend />
+            <ChartLegend simulating={!!simActive} />
             {astronautParams.length === 0 && <p className="empty">Select astronaut parameters above.</p>}
             <div className="trend-grid">
               {astronautParams.map((p) => (
-                <ChartCard key={p.id} param={p} data={astronautSeries[p.id]} />
+                <ChartCard key={p.id} param={p} data={astronautSeries[p.id]} window={window} />
               ))}
             </div>
           </section>
@@ -211,10 +217,12 @@ function ChartCard({
   param,
   data,
   height,
+  window,
 }: {
   param: ParamDef
   data: SeriesPoint[]
   height?: number
+  window: { start: number; end: number } | null
 }) {
   return (
     <div className={`chart-card chart-card--${latestStatus(data)}`}>
@@ -226,8 +234,9 @@ function ChartCard({
           </span>
         )}
         <ChartStatusBadge data={data} />
+        <ChartSimBadge data={data} />
       </h3>
-      <TrendChart param={param} data={data} height={height} />
+      <TrendChart param={param} data={data} height={height} simWindow={window} />
     </div>
   )
 }

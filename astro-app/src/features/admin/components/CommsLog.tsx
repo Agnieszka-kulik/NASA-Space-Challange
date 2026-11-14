@@ -10,13 +10,17 @@ interface Props {
 
 const ICONS: Record<SentMessage['kind'], string> = { recommendation: '💬', exam: '🩺', scenario: '📢', earth: '📡' }
 
-export default function CommsLog({ messages, timeScale }: Props) {
+export default function CommsLog({ messages, timeScale, onTimeScale }: Props) {
   const now = useNow()
 
   return (
     <section className="panel comms">
       <h2 className="panel__title">
         Comms log
+        <label className="comms__speed" title="Speed up message travel time for the demo">
+          <input type="checkbox" checked={timeScale > 1} onChange={(e) => onTimeScale(e.target.checked ? 30 : 1)} />
+          ⏩ demo ×30
+        </label>
       </h2>
       {messages.length === 0 && <p className="empty">No messages sent yet. Use “Recommend” or “Exam” on an alert. Onboard messages reach the crew instantly; reports to Earth take as long as the signal travels.</p>}
       <ul className="comms__list">
