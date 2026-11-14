@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export interface TodoTask {
   id: string
@@ -32,56 +33,13 @@ export default function TodoAccordion({
   onUpdateValue,
   onAddCustomTask,
 }: TodoAccordionProps) {
-  const [openIds, setOpenIds] = useState<string[]>(['daily', 'minigames'])
+  const navigate = useNavigate()
+  const [openIds, setOpenIds] = useState<string[]>(['daily'])
   const [customLabel, setCustomLabel] = useState('')
   const [customVal, setCustomVal] = useState('')
-  const [drawnGameMsg, setDrawnGameMsg] = useState<Record<string, string>>({})
-
-  // Quick interactive reflex mini-game state
-  const [reflexState, setReflexState] = useState<'idle' | 'waiting' | 'ready' | 'done'>('idle')
-  const [reflexStart, setReflexStart] = useState<number>(0)
-  const [reflexMs, setReflexMs] = useState<number | null>(null)
 
   const toggleSection = (id: string) => {
     setOpenIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
-  }
-
-  const startReflexGame = (sectionId: string, taskId: string) => {
-    setReflexState('waiting')
-    setReflexMs(null)
-    const delay = 1000 + Math.floor(Math.random() * 1800)
-    window.setTimeout(() => {
-      setReflexState('ready')
-      setReflexStart(performance.now())
-    }, delay)
-      ; (window as unknown as { __reflexTarget?: { sectionId: string; taskId: string } }).__reflexTarget = {
-        sectionId,
-        taskId,
-      }
-  }
-
-  const finishReflexGame = () => {
-    if (reflexState !== 'ready') return
-    const elapsed = Math.round(performance.now() - reflexStart)
-    setReflexMs(elapsed)
-    setReflexState('done')
-    const target = (window as unknown as { __reflexTarget?: { sectionId: string; taskId: string } })
-      .__reflexTarget
-    if (target) {
-      onUpdateValue(target.sectionId, target.taskId, `${elapsed} ms`)
-      const sec = sections.find((s) => s.id === target.sectionId)
-      const t = sec?.tasks.find((task) => task.id === target.taskId)
-      if (t && !t.done) {
-        onToggleTask(target.sectionId, target.taskId, `${elapsed} ms`)
-      }
-    }
-  }
-
-  const handleDrawMemoryGame = (taskId: string) => {
-    setDrawnGameMsg((prev) => ({
-      ...prev,
-      [taskId]: 'Randomizer ready (upcoming game pool)',
-    }))
   }
 
   const handleAddCustom = (e: React.FormEvent) => {
@@ -97,11 +55,33 @@ export default function TodoAccordion({
       <div className="todo-card__header">
         <div>
           <h2 className="todo-card__title">Task & Measurement Checklist</h2>
-          <p className="todo-card__sub">Expand a section to enter your measurements or run a test</p>
+          <p className="todo-card__sub">Expand a section to enter your measurements or launch cognitive games</p>
         </div>
       </div>
 
       <div className="todo-accordion">
+        {/* Direct single link card to Aurora-7 Cognitive Minigames (game_code_v2) */}
+        <div className="todo-section todo-section--open">
+          <button
+            type="button"
+            className="todo-section__trigger"
+            onClick={() => navigate('/user/games')}
+          >
+            <div className="todo-section__left">
+              <span className="todo-section__icon">🕹️</span>
+              <div>
+                <div className="todo-section__name">Cognitive Minigames (Aurora-7)</div>
+                <div className="todo-section__desc">
+                  Reflexes, working memory, coordination, pilot & eye-tracking
+                </div>
+              </div>
+            </div>
+            <div className="todo-section__right">
+              <span className="todo-section__badge">▶ Play Games →</span>
+            </div>
+          </button>
+        </div>
+
         {sections.map((section) => {
           const isOpen = openIds.includes(section.id)
           const completedCount = section.tasks.filter((t) => t.done).length
@@ -110,8 +90,9 @@ export default function TodoAccordion({
           return (
             <div
               key={section.id}
-              className={`todo-section ${isOpen ? 'todo-section--open' : ''} ${completedCount === totalCount && totalCount > 0 ? 'todo-section--complete' : ''
-                }`}
+              className={`todo-section ${isOpen ? 'todo-section--open' : ''} ${
+                completedCount === totalCount && totalCount > 0 ? 'todo-section--complete' : ''
+              }`}
             >
               <button
                 type="button"
@@ -150,48 +131,7 @@ export default function TodoAccordion({
                         </label>
 
                         <div className="todo-item__controls">
-                          {task.isGame === 'reflex' && (
-                            <div className="todo-minigame">
-                              {reflexState === 'idle' || reflexState === 'done' ? (
-                                <button
-                                  type="button"
-                                  className="todo-game-btn"
-                                  onClick={() => startReflexGame(section.id, task.id)}
-                                >
-                                  {reflexMs ? `Score: ${reflexMs}ms (Retry)` : '⚡ Reflex Test'}
-                                </button>
-                              ) : reflexState === 'waiting' ? (
-                                <button type="button" className="todo-game-btn todo-game-btn--wait">
-                                  Wait for green...
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="todo-game-btn todo-game-btn--go"
-                                  onClick={finishReflexGame}
-                                >
-                                  CLICK NOW!
-                                </button>
-                              )}
-                            </div>
-                          )}
-
-                          {task.isGame === 'memory' && (
-                            <div className="todo-minigame">
-                              <button
-                                type="button"
-                                className="todo-game-btn todo-game-btn--draw"
-                                onClick={() => handleDrawMemoryGame(task.id)}
-                              >
-                                🎲 Draw Game
-                              </button>
-                              {drawnGameMsg[task.id] && (
-                                <span className="todo-drawn-hint">{drawnGameMsg[task.id]}</span>
-                              )}
-                            </div>
-                          )}
-
-                          {task.placeholder && task.isGame !== 'reflex' && (
+                          {task.placeholder && (
                             <div className="todo-input-group">
                               <input
                                 type="text"

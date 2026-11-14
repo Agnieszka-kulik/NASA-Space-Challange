@@ -121,7 +121,7 @@ export default function DuckChatSubpage({
   const initialTopic = (searchParams.get('topic') as 'all' | 'mental' | 'physical' | 'app') || 'all'
 
   const [activeCategory, setActiveCategory] = useState<'all' | 'mental' | 'physical' | 'app'>(initialTopic)
-  const [duckMood, setDuckMood] = useState<DuckPresetId>('zSerduszkiem')
+  const [duckMood, setDuckMood] = useState<DuckPresetId>('bezNoza')
   const [inputValue, setInputValue] = useState('')
 
   // WebLLM state
@@ -140,7 +140,7 @@ export default function DuckChatSubpage({
       sender: 'duck',
       text: `Hello Commander! 🦆 I am your offline AI Duck Companion powered by our Local NASA Medical RAG Knowledge Base (NASA-STD-3001 & ISS Medical Checklist).\n\nYour live telemetry: Daily Score ${overallScorePercent}%, Hydration ${waterGlasses}/${waterGoal} glasses, Balance ${points} PTS.\nAsk me any medical, psychological, or app question—or click "⚡ Load WebLLM in Browser" on the left to run a local neural LLM 100% offline via WebGPU!`,
       time: 'Now',
-      duckMood: 'zSerduszkiem',
+      duckMood: 'bezNoza',
       engineUsed: 'Local NASA RAG',
       ragCitations: [
         { code: 'NASA-STD-3001-CV-01', title: 'Cardiovascular & BP Standard' },
