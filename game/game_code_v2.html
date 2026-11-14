@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aurora-7 · Astro Cognitive Escape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+<!--
+  ============================================================
+  AURORA-7 · ASTRO COGNITIVE ESCAPE  (moduł do aplikacji zdrowotnej astronautów)
+  ------------------------------------------------------------
+  INTEGRACJA Z TWOJĄ APLIKACJĄ HTML:
+   1. <link> z czcionkami + blok <style id="ac-style"> -> do <head>
+   2. <div id="astro-cognition-game"></div>           -> miejsce gry
+   3. blok <script id="ac-script">                    -> na koniec <body>
+
+  API (window.AstroCognition):
+    .getSessions()   wszystkie sesje (surowe dane)
+    .getRanking()    ranking astronautów (średnia 3 ostatnich sesji + trend vs baza)
+    .duckFor(score, deltaPct, streakDays)  id kaczki dla wyniku (getRanking() zwraca też pole .duck)
+    .getOrders() / .getRewards() / .setRewards([...]) / .onOrder(cb)  nagrody fizyczne i zamówienia (zdarzenie 'astro:reward-ordered')
+    .setRequiredMeasurements(['hr','spo2'])  dodatkowe pomiary wymagane, by odblokować planety (hr, hrv, spo2, temp)
+    .exportJSON() / .exportCSV()   (sesje zawierają też s.eye: moduł Wzrok / eye tracking, wymaga kamery)
+    .onSaved(cb)     callback po zapisaniu sesji
+  Zdarzenie DOM:  window.addEventListener('astro:session-saved', e => e.detail)
+  Dane: localStorage["astro.escape.v2"] = { sessions:[...], profiles:{...} }
+  ============================================================
+-->
+<style id="ac-style">
+.ac-root{--acc:#7dd3fc;--acc2:#c084fc;--g1:rgba(192,132,252,.28);--g2:rgba(56,189,248,.22);--bg:#050816;--panel:rgba(16,22,52,.62);--line:rgba(125,211,252,.22);--txt:#e8ecff;--mut:#97a3d6;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;
+  position:relative;isolation:isolate;overflow:hidden;font-family:'Exo 2','Segoe UI',system-ui,sans-serif;color:var(--txt);
+  background:radial-gradient(1100px 600px at 85% -10%,var(--g1),transparent 60%),radial-gradient(900px 500px at -10% 110%,var(--g2),transparent 60%),var(--bg);
+  border:1px solid var(--line);border-radius:20px;max-width:900px;margin:16px auto;box-shadow:0 0 70px var(--g1),inset 0 0 80px rgba(56,189,248,.04)}
+.ac-root[data-theme=mars]{--acc:#fb923c;--acc2:#f43f5e;--g1:rgba(244,63,94,.26);--g2:rgba(251,146,60,.2);--line:rgba(251,146,60,.28)}
+.ac-root[data-theme=aurora]{--acc:#4ade80;--acc2:#22d3ee;--g1:rgba(34,211,238,.22);--g2:rgba(74,222,128,.2);--line:rgba(74,222,128,.26)}
+.ac-root[data-theme=void]{--acc:#e5e7eb;--acc2:#94a3b8;--g1:rgba(148,163,184,.18);--g2:rgba(100,116,139,.15);--line:rgba(203,213,225,.22);--bg:#020203}
+.ac-root *{box-sizing:border-box}
+.ac-bg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.ac-wrap{position:relative;z-index:1;padding:20px}
+.ac-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.ac-title{font-family:Orbitron,sans-serif;font-weight:900;font-size:1.25rem;letter-spacing:.12em;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.ac-title small{display:block;font:400 .68rem 'Exo 2',sans-serif;letter-spacing:.25em;color:var(--mut);-webkit-text-fill-color:var(--mut)}
+.ac-chips{display:flex;gap:8px;align-items:center}
+.ac-chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 12px;font-size:.85rem;white-space:nowrap}
+.ac-chip b{color:var(--warn)}
+.ac-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.ac-tab,.ac-btn{font:600 .92rem 'Exo 2',sans-serif;color:var(--txt);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 15px;cursor:pointer;transition:.15s}
+.ac-tab:hover,.ac-btn:hover{border-color:var(--acc);box-shadow:0 0 14px var(--g2)}
+.ac-tab.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#05101f;border-color:transparent}
+.ac-btn.pri{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#05101f;border-color:transparent;font-weight:700}
+.ac-btn.ghost{background:transparent}
+.ac-btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.ac-card{background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.ac-card h3,.ac-h{font-family:Orbitron,sans-serif;font-size:.95rem;letter-spacing:.08em;margin:0 0 10px;color:var(--acc)}
+.ac-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.ac-field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px;font-size:.82rem;color:var(--mut)}
+.ac-field input,.ac-field select{background:rgba(5,8,22,.7);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:9px;font:1rem 'Exo 2',sans-serif}
+.ac-note{font-size:.82rem;color:var(--mut)}
+.ac-hud{display:flex;gap:10px;align-items:stretch;margin-bottom:14px;flex-wrap:wrap}
+.ac-rooms{display:flex;flex:1;gap:6px;min-width:260px}
+.ac-room{flex:1;text-align:center;font-size:.68rem;color:var(--mut);padding:6px 2px;border-bottom:3px solid var(--line)}
+.ac-room.done{color:var(--ok);border-color:var(--ok)}
+.ac-room.cur{color:var(--acc);border-color:var(--acc);text-shadow:0 0 10px var(--acc)}
+.ac-code{display:flex;gap:5px;align-items:center}
+.ac-code span{width:30px;height:38px;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font:700 1.1rem Orbitron,sans-serif;background:rgba(5,8,22,.6);color:var(--mut)}
+.ac-code span.on{color:var(--ok);border-color:var(--ok);box-shadow:0 0 12px rgba(74,222,128,.4)}
+.ac-prog{height:6px;background:rgba(5,8,22,.7);border-radius:4px;overflow:hidden;margin-bottom:12px}
+.ac-prog>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .25s}
+.ac-stage{position:relative;height:320px;border-radius:14px;border:1px solid var(--line);background:rgba(5,8,22,.55);overflow:hidden;user-select:none;touch-action:manipulation}
+.ac-airlock{height:300px;border-radius:14px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;cursor:pointer;text-align:center;padding:12px;user-select:none;background:rgba(5,8,22,.55)}
+.ac-lamp{width:96px;height:96px;border-radius:50%;background:#334155;box-shadow:0 0 0 6px rgba(255,255,255,.06);transition:.05s}
+.ac-airlock.wait .ac-lamp{background:#dc2626;box-shadow:0 0 40px #dc2626}
+.ac-airlock.go .ac-lamp{background:#22c55e;box-shadow:0 0 60px #22c55e}
+.ac-rtxt{font:600 1.15rem Orbitron,sans-serif}
+.ac-target{position:absolute;width:46px;height:46px;border-radius:50%;transform:translate(-50%,-50%);cursor:crosshair;background:radial-gradient(circle,#fff 0 16%,#f43f5e 18% 42%,#fff 44% 58%,#f43f5e 60% 78%,transparent 80%);box-shadow:0 0 20px #f43f5e;animation:acpulse .9s infinite}
+@keyframes acpulse{50%{transform:translate(-50%,-50%) scale(1.12)}}
+.ac-chimp-hdr{display:flex;justify-content:space-between;margin-bottom:10px;font-family:Orbitron,sans-serif;font-size:.85rem}
+.ac-chimp{display:grid;gap:8px;max-width:440px;margin:0 auto}
+.ac-cell{aspect-ratio:1;border-radius:12px;font:700 1.5rem Orbitron,sans-serif;border:1px solid var(--line);background:rgba(125,211,252,.1);color:var(--txt);cursor:pointer;padding:0}
+.ac-cell.off{background:transparent;border-color:transparent;cursor:default}
+.ac-cell.mask{color:transparent;background:linear-gradient(135deg,var(--acc),var(--acc2));border-color:transparent}
+.ac-cell.gone{visibility:hidden}
+.ac-flcanvas{display:block;width:100%;max-width:420px;margin:0 auto;border-radius:14px;border:1px solid var(--line);touch-action:none;cursor:pointer;background:#050816}
+.ac-q{font:700 1.45rem Orbitron,sans-serif;text-align:center;margin:14px 0 18px;line-height:1.4}
+.ac-q.txt{font:600 1.15rem 'Exo 2',sans-serif}
+.ac-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ac-opts .ac-btn{font-size:1.1rem;padding:14px}
+.ac-opts .ac-btn.dim{opacity:.25;pointer-events:none}
+.ac-tag{display:inline-block;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--acc2);border:1px solid var(--acc2);border-radius:999px;padding:2px 10px}
+.ac-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.ac-kpi{background:rgba(5,8,22,.55);border:1px solid var(--line);border-radius:12px;padding:10px}
+.ac-kpi b{display:block;font:700 1.25rem Orbitron,sans-serif}.ac-kpi span{color:var(--mut);font-size:.78rem}
+.ac-big{font:900 2.8rem Orbitron,sans-serif;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.ac-table{width:100%;border-collapse:collapse;font-size:.86rem}
+.ac-table th,.ac-table td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+.ac-table th{color:var(--mut);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
+.ac-table tr.sel{background:rgba(125,211,252,.08)} .ac-table tbody tr{cursor:pointer}
+.ac-good{color:var(--ok)}.ac-bad{color:var(--bad)}.ac-flag{color:var(--warn)}
+.ac-shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.ac-item{background:rgba(5,8,22,.55);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.ac-item .ic{font-size:2rem}.ac-item .nm{font-weight:700}.ac-item .ds{font-size:.78rem;color:var(--mut);flex:1}
+.ac-item.eq{border-color:var(--ok)}
+.ac-badge{display:flex;gap:10px;align-items:center;padding:8px;border-radius:12px;border:1px solid var(--line);margin-bottom:8px;background:rgba(5,8,22,.45)}
+.ac-badge.lock{opacity:.4;filter:grayscale(1)}
+.ac-launch{font-size:3rem;text-align:center;animation:aclaunch 2.4s ease-in forwards;height:70px}
+@keyframes aclaunch{0%{transform:translateY(0)}100%{transform:translateY(-140px) scale(.5);opacity:0}}
+.ac-toast{position:absolute;right:16px;top:16px;z-index:5;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#05101f;font-weight:700;padding:10px 14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);animation:actoast .35s ease-out;margin-bottom:8px}
+@keyframes actoast{from{transform:translateX(30px);opacity:0}}
+.ac-equip{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.ac-equip label{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:.88rem;background:rgba(5,8,22,.45)}
+.ac-cv{width:100%;max-width:300px;height:auto;display:block;margin:auto}
+.ac-breath{height:260px;display:flex;align-items:center;justify-content:center;position:relative}
+.ac-bcircle{width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,var(--acc2),var(--acc));opacity:.7;box-shadow:0 0 70px var(--acc);transform:scale(.45)}
+.ac-btxt{position:absolute;font:700 1.2rem Orbitron,sans-serif;text-align:center;color:#fff;text-shadow:0 0 8px #000;pointer-events:none}
+.ac-vb{border:1px dashed var(--line);border-radius:10px;padding:8px 10px}
+@media(max-width:520px){.ac-wrap{padding:12px}.ac-title{font-size:1rem}}
+
+.ac-duck{image-rendering:pixelated;display:block;flex:none}
+.ac-duckbox{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:74px;font-size:.66rem;color:var(--mut);text-align:center}
+.ac-duckrow{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;margin:6px 0 10px}
+.ac-duckcell{display:flex;align-items:center;gap:8px}
+.ac-leg{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:12px;border:1px solid var(--line);margin-bottom:6px;background:rgba(5,8,22,.45);font-size:.85rem}
+.ac-leg.cur{border-color:var(--acc);box-shadow:0 0 12px var(--g2)}
+
+.ac-st{display:inline-block;font-size:.7rem;border-radius:999px;padding:2px 9px;border:1px solid var(--line)}
+.ac-st.pending{color:var(--warn);border-color:var(--warn)}.ac-st.delivered{color:var(--ok);border-color:var(--ok)}.ac-st.cancelled{color:var(--mut)}
+.ac-ord{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:rgba(5,8,22,.45)}
+.ac-ord .ic{font-size:1.8rem}.ac-ord .mid{flex:1;min-width:180px}
+.ac-vcode{font:700 1rem Orbitron,sans-serif;letter-spacing:.08em;color:var(--ok);user-select:all}
+.ac-field.sm{min-width:110px;flex:0 1 150px}
+
+.ac-map-row{padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:rgba(5,8,22,.45)}
+.ac-map-row.rec{border-color:var(--acc);box-shadow:0 0 14px var(--g2)}
+.ac-map-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.ac-lv{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.ac-lvb{min-width:64px;padding:8px 6px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--txt);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:Orbitron,sans-serif;transition:.15s}
+.ac-lvb b{font-size:1.1rem}.ac-lvb small{font-size:.7rem;color:var(--warn);letter-spacing:.05em;min-height:1em}
+.ac-lvb:hover:not(:disabled){border-color:var(--acc);box-shadow:0 0 14px var(--g2)}
+.ac-lvb.std{border-color:var(--acc)}
+.ac-lvb.lock{opacity:.35;cursor:not-allowed}
+
+.ac-space{display:block;width:100%;border-radius:14px;border:1px solid var(--line);background:#030510;touch-action:manipulation;cursor:crosshair}
+.ac-miss{margin:8px 0 12px;padding-left:20px}.ac-miss li{margin:3px 0}
+.ac-planetrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.ac-pdisc{width:84px;height:84px;border-radius:50%;flex:none;box-shadow:0 0 30px var(--pg,rgba(125,211,252,.4))}
+.ac-spmsg{text-align:center;margin:8px 0;font-size:.85rem;color:var(--mut);min-height:1.3em}.ac-spmsg.warn{color:var(--warn)}
+/* ---- moduł WZROK (eye tracking) ---- */
+.ac-eye-ov{--acc:#7dd3fc;--acc2:#c084fc;--panel:rgba(16,22,52,.9);--line:rgba(125,211,252,.28);--txt:#e8ecff;--mut:#97a3d6;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;position:fixed;inset:0;z-index:2147483000;background:radial-gradient(ellipse at 50% 40%,#0b1030,#030511);color:var(--txt);font-family:'Exo 2','Segoe UI',system-ui,sans-serif;overflow:hidden;user-select:none}
+.ac-eye-ov *{box-sizing:border-box}
+.ac-eye-ov .ac-btn{font:600 .92rem 'Exo 2',sans-serif;color:var(--txt);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 15px;cursor:pointer}
+.ac-eye-ov .ac-btn.pri{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#05101f;border-color:transparent;font-weight:700}
+.eye-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.eye-cam{position:absolute;right:14px;bottom:56px;width:128px;height:96px;object-fit:cover;transform:scaleX(-1);border:1px solid var(--line);border-radius:6px;opacity:.6;background:#000}
+.eye-hud,.eye-bot{position:absolute;left:0;right:0;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 16px;font:600 .74rem Orbitron,sans-serif;letter-spacing:.12em;background:rgba(5,8,22,.72)}
+.eye-hud{top:0;border-bottom:1px solid var(--line)}
+.eye-bot{bottom:0;border-top:1px solid var(--line);pointer-events:none}
+.eye-ok{color:var(--ok)}.eye-warn{color:var(--warn)}.eye-bad{color:var(--bad)}
+.eye-panel{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;gap:12px;padding:64px 16px 56px;text-align:center;overflow:auto;background:rgba(3,5,17,.6)}
+.eye-panel>:first-child{margin-top:auto}.eye-panel>:last-child{margin-bottom:auto}
+.eye-panel h3{font:700 1.1rem Orbitron,sans-serif;letter-spacing:.1em;color:var(--acc);margin:0}
+.eye-note{font-size:.85rem;color:var(--mut);max-width:560px}
+.eye-checks{text-align:left;line-height:1.9}
+.eye-msg{font:700 1rem Orbitron,sans-serif;letter-spacing:.08em;min-height:1.4em}
+.eye-pause{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(5,8,22,.86);color:var(--bad);font:700 1.5rem Orbitron,sans-serif;letter-spacing:.15em;text-align:center}
+.eye-pause small{font:400 1rem 'Exo 2',sans-serif;color:var(--txt);letter-spacing:.05em}
+.eye-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;width:min(780px,94vw)}
+.eye-kpi{background:rgba(5,8,22,.6);border:1px solid var(--line);border-radius:12px;padding:10px}
+.eye-kpi b{display:block;font:700 1.35rem Orbitron,sans-serif;color:var(--acc)}.eye-kpi span{color:var(--mut);font-size:.76rem}
+.eye-ana{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:flex-start;width:min(780px,94vw)}
+.eye-ana>div{flex:1;min-width:280px}
+.eye-t{border-collapse:collapse;font-size:.82rem;width:100%}
+.eye-t th,.eye-t td{padding:6px 5px;border-bottom:1px solid var(--line);text-align:left}
+.eye-t th{color:var(--mut);font-weight:600;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em}
+.eye-h{font:700 .8rem Orbitron,sans-serif;letter-spacing:.08em;color:var(--acc);margin:0 0 6px;text-align:left}
+</style>
+</head>
+<body style="margin:0;background:#02030a;padding:8px">
+
+<div id="astro-cognition-game"></div>
+
+<script id="ac-script">
+(function () {
+  'use strict';
+  const KEY = 'astro.escape.v2', LAST_KEY = 'astro.escape.lastUser', SND_KEY = 'astro.escape.sound';
+  const listeners = [];
+
+  /* ================= helpers ================= */
+  const $ = (s, r) => (r || document).querySelector(s);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+  const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+  const median = a => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(0, i);[a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const now = () => performance.now();
+  const dayKey = ts => new Date(ts).toLocaleDateString('sv-SE');
+
+  /* ================= storage ================= */
+  function loadDB() { try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.sessions)) { d.profiles = d.profiles || {}; return d; } } catch (e) { } return { sessions: [], profiles: {} }; }
+  const DB = loadDB(); DB.orders = DB.orders || [];
+  const saveDB = () => { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { } };
+  function profile(name) {
+    if (!DB.profiles[name]) DB.profiles[name] = { credits: 100, inv: { shield: 1, slowmo: 0, life: 1, hint: 2 }, owned: ['skin:classic', 'trail:flame', 'theme:nebula'], skin: 'classic', trail: 'flame', theme: 'nebula', ach: [] };
+    return DB.profiles[name];
+  }
+  const getSessions = () => DB.sessions;
+  function addSession(s) {
+    DB.sessions.push(s); saveDB();
+    listeners.forEach(cb => { try { cb(s); } catch (e) { console.error(e); } });
+    window.dispatchEvent(new CustomEvent('astro:session-saved', { detail: s }));
+  }
+
+  /* ================= NAGRODY FIZYCZNE (zamówienia realizowane przez koordynatora) =================
+     Astronauta wymienia kredyty na nagrodę -> powstaje zamówienie (status 'pending').
+     Koordynator (panel „Koordynator”, PIN) oznacza je jako zrealizowane (dla kodów wpisuje kod) albo anuluje ze zwrotem kredytów.
+     API: AstroCognition.getOrders(), .onOrder(cb), .getRewards(), .setRewards([...]);  zdarzenie: 'astro:reward-ordered' / 'astro:reward-updated'.
+     Pozycja: { id, icon, name, price, type:'phys'|'code', stock:null|liczba } */
+  const MAX_PENDING = 3, orderListeners = [];
+  const DEFAULT_REWARDS = [
+    { id: 'r-choc', icon: '🍫', name: 'Czekolada', price: 120, type: 'phys', stock: null },
+    { id: 'r-gum', icon: '🍬', name: 'Żelki', price: 90, type: 'phys', stock: null },
+    { id: 'r-cook', icon: '🍪', name: 'Ciastka', price: 100, type: 'phys', stock: null },
+    { id: 'r-tea', icon: '☕', name: 'Herbata / kawa premium', price: 110, type: 'phys', stock: null },
+    { id: 'r-movie', icon: '🎬', name: 'Kod do filmu', price: 400, type: 'code', stock: null },
+    { id: 'r-game', icon: '🎮', name: 'Kod do gry', price: 500, type: 'code', stock: null },
+    { id: 'r-music', icon: '🎧', name: 'Kod do muzyki / podcastów', price: 300, type: 'code', stock: null }
+  ];
+  function getRewards() { if (!Array.isArray(DB.rewards)) { DB.rewards = DEFAULT_REWARDS.map(r => Object.assign({}, r)); saveDB(); } return DB.rewards; }
+  function setRewards(arr) {
+    if (!Array.isArray(arr)) return getRewards();
+    DB.rewards = arr.filter(r => r && r.name && +r.price >= 0).map((r, i) => ({ id: r.id || 'r-' + Date.now() + i, icon: r.icon || '🎁', name: String(r.name), price: Math.round(+r.price), type: r.type === 'code' ? 'code' : 'phys', stock: r.stock === null || r.stock === undefined || r.stock === '' ? null : Math.max(0, Math.round(+r.stock)) }));
+    saveDB(); window.dispatchEvent(new CustomEvent('astro:reward-updated', { detail: DB.rewards })); return DB.rewards;
+  }
+  const getOrders = () => DB.orders;
+  const coordPin = () => DB.coordPin || '7777';
+  function emitOrder(o) { orderListeners.forEach(cb => { try { cb(o); } catch (e) { console.error(e); } }); window.dispatchEvent(new CustomEvent('astro:reward-ordered', { detail: o })); }
+  function placeOrder(name, rid) {
+    const p = profile(name), r = getRewards().find(x => x.id === rid);
+    if (!r) return { ok: false, msg: 'Nie ma takiej nagrody.' };
+    if (r.stock !== null && r.stock <= 0) return { ok: false, msg: 'Brak na stanie.' };
+    if (DB.orders.filter(o => o.astronaut === name && o.status === 'pending').length >= MAX_PENDING) return { ok: false, msg: 'Masz już ' + MAX_PENDING + ' oczekujące zamówienia. Poczekaj na realizację.' };
+    if (p.credits < r.price) return { ok: false, msg: 'Za mało kredytów 💰' };
+    p.credits -= r.price; if (r.stock !== null) r.stock--;
+    const o = { id: 'ZAM-' + Math.random().toString(36).slice(2, 6).toUpperCase(), ts: Date.now(), astronaut: name, rewardId: r.id, icon: r.icon, name: r.name, price: r.price, type: r.type, status: 'pending', code: '' };
+    DB.orders.push(o); saveDB(); emitOrder(o); return { ok: true, order: o };
+  }
+  function cancelOrder(id) {
+    const o = DB.orders.find(x => x.id === id); if (!o || o.status !== 'pending') return false;
+    o.status = 'cancelled'; o.doneTs = Date.now(); profile(o.astronaut).credits += o.price;
+    const r = getRewards().find(x => x.id === o.rewardId); if (r && r.stock !== null) r.stock++;
+    saveDB(); emitOrder(o); return true;
+  }
+  function fulfilOrder(id, code) {
+    const o = DB.orders.find(x => x.id === id); if (!o || o.status !== 'pending') return false;
+    o.status = 'delivered'; o.doneTs = Date.now(); o.code = (code || '').trim(); saveDB(); emitOrder(o); return true;
+  }
+  function ordersCSV() {
+    const h = ['order_id', 'created', 'astronaut', 'reward', 'type', 'price', 'status', 'code', 'finished'];
+    return [h, ...DB.orders.map(o => [o.id, new Date(o.ts).toISOString(), o.astronaut, o.name, o.type, o.price, o.status, o.code || '', o.doneTs ? new Date(o.doneTs).toISOString() : ''])]
+      .map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+  }
+
+  /* ================= KACZKI (pixel-art) ================= */
+const DUCK_BASE=["................................................","................................................","................................................","................................................","................................................","...................##########...................","................################................","..............####............####..............","............###..................###............","...........##......................##...........","..........##........................##..........",".........##..........................##.........","........##............................##........","........##............................##........",".......##..............................##.......",".......##......###............###......##.......",".......##......###............###......##.......","......##.......###............###.......##......","......##............######..............##......","......##...........##....##.............##......","......##...........##....##.............##......",".....##.............######...............##.....",".....##..................................##.....","....###..................................###....","...####..................................####...","..##.##..................................##.##..",".##..##..................................##..##.",".##..##..................................##..##.",".##..##..................................##..##.",".##..##..................................##..##.",".##..##..................................##..##.",".##..##..................................##..##.","..#####..................................#####..","...####..................................####...","....##....................................##....",".....##..................................##.....",".....###................................###.....","......###..............................###......",".......###............................###.......","........####........................####........","..........####....................####..........","............########################............",".............#####............#####.............",".............##..##..........##..##.............",".............##..##..........##..##.............","..............####............####..............","................................................","................................................","................................................","................................................","................................................","................................................"];
+const DUCKS={
+  bezNoza:{label:"Bez noża",color:'#38bdf8',d:{}},
+  zNozem:{label:"Z nożem",color:'#38bdf8',d:{"27":".##..####################................##..##.","28":".##..##...####.........###...............##..##.","29":".##..##...####..........###..............##..##.","30":".##..##...####.........###...............##..##.","31":".##..########.........###................##..##.","32":"..#####.....############.................#####.."}},
+  groznaZNozem:{label:"Groźna z nożem",color:'#ef4444',d:{"12":"........##......###..........###......##........","13":"........##.......###........###.......##........","14":".......##.........###......###.........##.......","27":".##..####################................##..##.","28":".##..##...####.........###...............##..##.","29":".##..##...####..........###..............##..##.","30":".##..##...####.........###...............##..##.","31":".##..########.........###................##..##.","32":"..#####.....############.................#####.."}},
+  saturn:{label:"Z Saturnem",color:'#fbbf24',d:{"24":"...####....................######........####...","25":"..##.##...................##....##.......##.##..","26":".##..##................####......####....##..##.","27":".##..##..............###.##......##.###..##..##.","28":".##..##.............##...##########...##.##..##.","29":".##..##.............##....########....##.##..##.","30":".##..##..............###...######...###..##..##.","31":".##..##................####......####....##..##.","32":"..#####...................########.......#####.."}},
+  kosmita:{label:"Kosmita",color:'#a78bfa',d:{"0":"..............###..............###..............","1":".............#####............#####.............","2":"..............###..............###..............","3":"...............###............###...............","4":"................###..........###................"}},
+  zSerduszkiem:{label:"Z serduszkiem",color:'#f472b6',d:{"25":"..##.##..........####....####............##.##..","26":".##..##.........##..##..##..##...........##..##.","27":".##..##........##....####....##..........##..##.","28":".##..##........##.....##.....##..........##..##.","29":".##..##........##............##..........##..##.","30":".##..##.........##..........##...........##..##.","31":".##..##..........##........##............##..##.","32":"..#####...........##......##.............#####..","33":"...####............##....##..............####...","34":"....##..............##..##................##....","35":".....##..............####................##.....","36":".....###..............##................###....."}},
+  zmeczona:{label:"Zmęczona",color:'#94a3b8',d:{"1":".....................................#####......","2":"........................................##......","3":".......................................##.......","4":"......................................##........","5":"...................##########........#####......","7":"..............####............####...####.......","8":"............###..................###...##.......","9":"...........##......................##.##........","10":"..........##........................####........","15":".......##..............................##.......","16":".......##.....#####..........#####.....##.......","17":"......##......#####..........#####......##......"}},
+  obrazona:{label:"Obrażona",color:'#fb923c',d:{"15":".......##..............................##.......","16":".......##..............................##.......","17":"......##................................##......","18":"......##................................##......","19":"......##................................##......","20":"......##................................##......","21":".....##..................................##.....","35":".....##...............####...............##.....","36":".....###.............##..##.............###.....","37":"......###...........##....##...........###......","38":".......###...........######...........###......."}},
+  martwa:{label:"Martwa",color:'#a1a1aa',d:{"14":".......##.....##..##........##..##.....##.......","15":".......##......####..........####......##.......","16":".......##......####..........####......##.......","17":"......##......##..##........##..##......##......"}},
+  pytajaca:{label:"Pytająca",color:'#c084fc',d:{"0":"......................................####......","1":".....................................##..##.....","2":".........................................##.....","3":"........................................##......","4":".......................................##.......","5":"...................##########..........##.......","7":"..............####............####.....##.......","11":".........##......###................##..........","12":"........##......#####.................##........","14":".......##.......................###....##.......","15":".......##......###..............###....##.......","16":".......##......###..............###....##.......","17":"......##.......###......................##......"}},
+  cool:{label:"Cool",color:'#34d399',d:{"15":".......##################################.......","16":".......###.########..........########.###.......","17":"......##...########..........########...##......","18":"......##....######..######....######....##......"}},
+};
+  const DUCK_CACHE = {};
+  function duckRows(id) { const d = DUCKS[id] || DUCKS.bezNoza, rows = DUCK_BASE.slice(); Object.keys(d.d).forEach(i => rows[i] = d.d[i]); return rows; }
+  // zwraca dataURL sprite'a (cache), skala 4 px na piksel
+  function duckURL(id) {
+    if (DUCK_CACHE[id]) return DUCK_CACHE[id];
+    const d = DUCKS[id] || DUCKS.bezNoza, rows = duckRows(id), S = 4, cv = document.createElement('canvas');
+    cv.width = 48 * S; cv.height = rows.length * S; const c = cv.getContext('2d'); c.fillStyle = d.color;
+    rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) if (r[x] === '#') c.fillRect(x * S, y * S, S, S); });
+    return DUCK_CACHE[id] = cv.toDataURL();
+  }
+  // Dobór kaczki: najpierw alerty zdrowotne (spadek wyników), potem regularność, na końcu sam wynik 0-100
+  const DUCK_TIERS = [
+    [92, 'saturn', 'Wynik ≥ 92: elita kosmosu'], [85, 'cool', 'Wynik 85–91: świetna forma'], [72, 'zSerduszkiem', 'Wynik 72–84: bardzo dobrze'],
+    [58, 'bezNoza', 'Wynik 58–71: stabilnie'], [48, 'zNozem', 'Wynik 48–57: walczy, ale ostrożnie'], [38, 'pytajaca', 'Wynik 38–47: coś jest nie tak?'],
+    [25, 'zmeczona', 'Wynik 25–37: zmęczenie'], [0, 'martwa', 'Wynik poniżej 25: czas odpocząć']
+  ];
+  function duckFor(score, deltaPct, streakDays) {
+    if (deltaPct != null && deltaPct <= -15) return 'groznaZNozem';
+    if (deltaPct != null && deltaPct <= -8) return 'obrazona';
+    if ((streakDays || 0) >= 7) return 'kosmita';
+    for (const t of DUCK_TIERS) if (score >= t[0]) return t[1];
+    return 'martwa';
+  }
+  const duckLabel = id => (DUCKS[id] || DUCKS.bezNoza).label;
+  function duckImg(id, px, title) {
+    const d = DUCKS[id] || DUCKS.bezNoza;
+    return `<img class="ac-duck" src="${duckURL(id)}" width="${px}" height="${Math.round(px * 49 / 48)}" alt="${esc(d.label)}" title="${esc(title || d.label)}" style="filter:drop-shadow(0 0 ${Math.max(3, px / 8)}px ${d.color}88)">`;
+  }
+
+  /* ================= analytics ================= */
+  const DOMAINS = [['reaction', 'Reakcja'], ['coordination', 'Koordynacja'], ['chimp', 'Pamięć'], ['flappy', 'Pilotaż'], ['logic', 'Logika'], ['eye', 'Wzrok']];
+  function getRanking() {
+    const by = {};
+    DB.sessions.forEach(s => (by[s.astronaut] = by[s.astronaut] || []).push(s));
+    return Object.entries(by).map(([name, ss]) => {
+      ss.sort((a, b) => a.ts - b.ts);
+      const comp = ss.map(x => x.composite), last3 = ss.slice(-3);
+      const avg = k => { const v = last3.filter(x => x[k] && x[k].score != null).map(x => x[k].score); return v.length ? Math.round(mean(v)) : 0; };
+      const baseline = ss.length >= 4 ? mean(comp.slice(0, 3)) : null, recent = mean(comp.slice(-3));
+      const d = baseline ? ((recent - baseline) / baseline) * 100 : null;
+      return {
+        astronaut: name, sessions: ss.length, best: Math.max(...comp), recentAvg: Math.round(recent),
+        reaction: avg('reaction'), coordination: avg('coordination'), chimp: avg('chimp'), flappy: avg('flappy'), logic: avg('logic'), eye: avg('eye'),
+        deltaPct: d === null ? null : Math.round(d * 10) / 10, alert: d !== null && d <= -15, warn: d !== null && d <= -8 && d > -15, trend: comp.slice(-15),
+        duck: duckFor(Math.round(recent), d === null ? null : d, streak(name))
+      };
+    }).sort((a, b) => b.recentAvg - a.recentAvg);
+  }
+  function readiness(r) {
+    if (r.deltaPct === null) return ['⏳ Zbieranie bazy (min. 4 sesje)', 'ac-note'];
+    if (r.alert) return ['⚠ Spadek ≥15%: zalecany odpoczynek / konsultacja z lekarzem pokładowym', 'ac-flag'];
+    if (r.warn) return ['⚡ Lekkie pogorszenie: uważaj na zmęczenie', 'ac-flag'];
+    return ['✔ Pełna gotowość operacyjna', 'ac-good'];
+  }
+  function streak(name) {
+    const days = new Set(DB.sessions.filter(s => s.astronaut === name).map(s => dayKey(s.ts)));
+    let d = new Date(), n = 0;
+    if (!days.has(dayKey(d))) d.setDate(d.getDate() - 1);
+    while (days.has(dayKey(d))) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+  const rankTitle = n => n >= 15 ? 'Admirał' : n >= 8 ? 'Komandor' : n >= 3 ? 'Pilot' : 'Kadet';
+
+  /* ================= DANE Z MODUŁU POMIAROWEGO (vitals) =================
+     Osobny moduł Twojej aplikacji może przekazać pomiary na 3 sposoby:
+       1) AstroCognition.setVitals({ hr:72, hrv:45, spo2:98, temp:36.7, sleepHours:6, stress:2, fatigue:3, mood:4 })
+       2) window.dispatchEvent(new CustomEvent('astro:vitals', { detail: { ... } }))
+       3) localStorage['astro.vitals'] = JSON.stringify({ ... })   (odczyt przy starcie misji)
+     hr = tętno spoczynkowe [bpm], hrv = RMSSD [ms], spo2 [%], temp [°C], stress/fatigue/mood = skala 1–5.
+     Wszystkie pola są opcjonalne. Progi w kodzie to proste heurystyki, nie diagnoza medyczna. */
+  const VKEY = 'astro.vitals', vitalsHooks = [];
+  let VITALS = {};
+  const num = x => (x === null || x === undefined || x === '' || isNaN(+x)) ? null : +x;
+  function readVitals() { try { const v = JSON.parse(localStorage.getItem(VKEY)); if (v && typeof v === 'object') VITALS = Object.assign({}, VITALS, v); } catch (e) { } return VITALS; }
+  function setVitals(v) {
+    if (!v || typeof v !== 'object') return VITALS;
+    VITALS = Object.assign({}, VITALS, v, { ts: Date.now(), _t: Object.assign({}, VITALS._t, Object.fromEntries(Object.keys(v).filter(k => k !== 'ts' && k !== '_t').map(k => [k, Date.now()]))) });
+    try { localStorage.setItem(VKEY, JSON.stringify(VITALS)); } catch (e) { }
+    vitalsHooks.forEach(f => f(VITALS)); return VITALS;
+  }
+  window.addEventListener('astro:vitals', e => setVitals(e.detail));
+  window.addEventListener('storage', e => { if (e.key === VKEY) { readVitals(); vitalsHooks.forEach(f => f(VITALS)); } });
+  readVitals();
+
+  /* Wymagane pomiary: dopóki nie są wykonane, planety w kosmosie są zablokowane (pole siłowe).
+     Zawsze wymagany jest skan samopoczucia na stacji. Dodatkowo aplikacja może wymagać pomiarów z modułu pomiarowego:
+       AstroCognition.setRequiredMeasurements(['hr','spo2'])   // dostępne: hr, hrv, spo2, temp (ważne 24 h)
+     Jeśli pomiar nie przyszedł z modułu, astronauta może wpisać go ręcznie na stacji. */
+  const REQ_KEY = 'astro.escape.req';
+  const VITAL_FIELDS = { hr: { label: 'Tętno spoczynkowe (bpm)', min: 30, max: 220, step: 1 }, hrv: { label: 'HRV RMSSD (ms)', min: 1, max: 300, step: 1 }, spo2: { label: 'Saturacja SpO₂ (%)', min: 70, max: 100, step: 1 }, temp: { label: 'Temperatura ciała (°C)', min: 34, max: 42, step: .1 } };
+  let REQ = (() => { try { const a = JSON.parse(localStorage.getItem(REQ_KEY)); return Array.isArray(a) ? a.filter(k => VITAL_FIELDS[k]) : []; } catch (e) { return []; } })();
+  function setRequiredMeasurements(a) { REQ = (Array.isArray(a) ? a : []).filter(k => VITAL_FIELDS[k]); try { localStorage.setItem(REQ_KEY, JSON.stringify(REQ)); } catch (e) { } return REQ; }
+  function vitalOK(k) { const t = (VITALS._t && VITALS._t[k]) || VITALS.ts; return !!t && Date.now() - t < 864e5 && num(VITALS[k]) !== null; }
+
+  function vitalsFlags(v) {
+    const hr = num(v.hr), hrv = num(v.hrv), spo2 = num(v.spo2), temp = num(v.temp), warnings = [];
+    if (spo2 !== null && spo2 < 90) warnings.push(['bad', `SpO₂ ${spo2}% jest krytycznie niskie. Skontaktuj się z lekarzem pokładowym.`]);
+    else if (spo2 !== null && spo2 < 94) warnings.push(['warn', `SpO₂ ${spo2}% jest poniżej normy. Rozważ konsultację z lekarzem pokładowym przed intensywnymi zadaniami.`]);
+    if (temp !== null && temp >= 38) warnings.push(['bad', `Temperatura ${temp}°C: możliwa gorączka, zgłoś lekarzowi pokładowemu.`]);
+    else if (temp !== null && temp >= 37.5) warnings.push(['warn', `Temperatura ${temp}°C jest podwyższona.`]);
+    if (hr !== null && hr > 100) warnings.push(['warn', `Tętno spoczynkowe ${hr} bpm jest podwyższone.`]);
+    return { warnings, physioStress: (hr !== null && hr > 100) || (hrv !== null && hrv < 20) };
+  }
+  // domeny, w których ostatni wynik spadł o 15+ pkt względem średniej z poprzednich sesji
+  function weakDomains(user) {
+    const ss = DB.sessions.filter(s => s.astronaut === user).sort((a, b) => a.ts - b.ts);
+    if (ss.length < 2) return [];
+    const last = ss[ss.length - 1], prev = ss.slice(0, -1);
+    return DOMAINS.filter(([k]) => last[k] && last[k].score < mean(prev.filter(x => x[k]).map(x => x[k].score)) - 15).map(d => d[0]);
+  }
+  // Dobór misji do aktualnych pomiarów, samopoczucia i historii wyników
+  function planMission(user, checkin) {
+    const f = vitalsFlags(Object.assign({}, VITALS)), reasons = [], dn = Object.fromEntries(DOMAINS);
+    const stress = Math.max(checkin.stress, f.physioStress ? 4 : 0);
+    const fatigue = Math.max(checkin.fatigue, checkin.sleep < 5 ? 4 : checkin.sleep < 6 ? 3 : 0);
+    const stressHigh = stress >= 4, fatigueHigh = fatigue >= 4, moodLow = checkin.mood <= 2;
+    let order = ['reaction', 'coordination', 'chimp', 'eye', 'flappy', 'logic'];
+    if (fatigueHigh) {
+      order = ['reaction', 'chimp', 'logic', 'eye', 'coordination', 'flappy'];
+      reasons.push('😴 Zmęczenie lub za mało snu: na start test czujności (PVT, wydłużony do 7 prób) i pamięć, bo te funkcje najszybciej reagują na niedobór snu.');
+    }
+    if (stressHigh) {
+      order = fatigueHigh ? ['reaction', 'logic', 'chimp', 'eye', 'coordination', 'flappy'] : ['logic', 'chimp', 'eye', 'coordination', 'reaction', 'flappy'];
+      reasons.push(checkin.stress < 4 ? '💓 Tętno/HRV wskazują na podwyższony stres: zaczynamy od ćwiczenia oddechowego, a spokojniejsze zadania idą przed dynamicznymi.'
+        : '😰 Wysoki stres: zaczynamy od ćwiczenia oddechowego, spokojniejsze zadania (logika, pamięć) idą przed dynamicznymi, a pilotaż na końcu.');
+    }
+    const weak = weakDomains(user);
+    if (weak.length) {
+      order = [...weak.filter(k => order.includes(k)), ...order.filter(k => !weak.includes(k))];
+      reasons.push(`📉 Spadek względem Twoich poprzednich wyników (${weak.map(k => dn[k]).join(', ')}): te pokoje idą na początek, by zebrać dokładniejsze dane.`);
+    }
+    if (stressHigh) order = [...order.filter(k => k !== 'flappy'), 'flappy'];
+    const plan = stressHigh ? ['calm_breath', ...order] : [...order];
+    if (moodLow && !stressHigh) { plan.push('calm_ground'); reasons.push('🌧 Niski nastrój: na koniec krótkie ćwiczenie uziemiające 5-4-3-2-1.'); }
+    if (!reasons.length) reasons.push('✅ Wskaźniki w normie: standardowa kolejność misji.');
+    return { plan, reasons, warnings: f.warnings, flags: { stress, fatigue, stressHigh, fatigueHigh, moodLow }, weak };
+  }
+
+  function exportJSON() { return JSON.stringify(DB, null, 2); }
+  function exportCSV() {
+    const h = ['timestamp', 'astronaut', 'sleep_h', 'fatigue', 'mood', 'stress', 'reaction_median_ms', 'reaction_lapses', 'false_starts', 'reaction_score', 'coord_avg_time_ms', 'coord_avg_offset_px', 'coord_misses', 'coord_score',
+      'chimp_max_level', 'chimp_strikes', 'chimp_score', 'flappy_gates', 'flappy_attempts', 'flappy_score', 'logic_correct', 'logic_avg_time_s', 'logic_score', 'eye_hits', 'eye_total', 'eye_avg_reaction_ms', 'eye_calib_err_px', 'eye_score', 'boosts_used', 'composite', 'stress_before_calm', 'stress_after_calm'];
+    const rows = DB.sessions.map(s => [new Date(s.ts).toISOString(), s.astronaut, s.checkin.sleep, s.checkin.fatigue, s.checkin.mood, s.checkin.stress, s.reaction.median, s.reaction.lapses, s.reaction.falseStarts, s.reaction.score,
+      s.coordination.avgTime, s.coordination.avgOffset, s.coordination.misses, s.coordination.score, s.chimp.maxLevel, s.chimp.strikes, s.chimp.score, s.flappy.gates, s.flappy.attempts, s.flappy.score,
+      s.logic.correct, s.logic.avgTime, s.logic.score, s.eye ? s.eye.hits : '', s.eye ? s.eye.total : '', s.eye ? s.eye.avgReaction : '', s.eye ? s.eye.calibErr : '', s.eye ? s.eye.score : '', s.boostsUsed, s.composite,
+      s.calm && s.calm.length ? s.calm[0].stressBefore : '', s.calm && s.calm.length ? s.calm[s.calm.length - 1].stressAfter : '']);
+    return [h, ...rows].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+  }
+  function download(name, text, type) {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  /* ================= catalog: sklep i odznaki ================= */
+  const SHOP = [
+    { id: 'inv:shield', type: 'item', key: 'shield', icon: '🛡️', name: 'Tarcza energetyczna', price: 40, desc: 'Pochłania 1 zderzenie w locie przez asteroidy. (−5 pkt za użycie)' },
+    { id: 'inv:slowmo', type: 'item', key: 'slowmo', icon: '🐌', name: 'Spowolnienie asteroid', price: 40, desc: 'Asteroidy lecą wolniej w całej próbie. (−5 pkt)' },
+    { id: 'inv:life', type: 'item', key: 'life', icon: '❤️', name: 'Dodatkowe życie', price: 50, desc: 'Jedna szansa więcej w teście szympansa. (−5 pkt, gdy użyta)' },
+    { id: 'inv:hint', type: 'item', key: 'hint', icon: '💡', name: 'Podpowiedź', price: 25, desc: 'Usuwa 2 błędne odpowiedzi w zagadce. (−4 pkt)' },
+    { id: 'skin:classic', type: 'skin', icon: '🚀', name: 'Klasyczna rakieta', price: 0, desc: 'Standardowy statek.' },
+    { id: 'skin:neon', type: 'skin', icon: '🌌', name: 'Neon Striker', price: 120, desc: 'Świecący, neonowy kadłub.' },
+    { id: 'skin:gold', type: 'skin', icon: '🥇', name: 'Złoty Orzeł', price: 200, desc: 'Luksusowa rakieta dla elity.' },
+    { id: 'skin:ufo', type: 'skin', icon: '🛸', name: 'Latający talerz', price: 300, desc: 'Obcy w kokpicie? Nie pytaj.' },
+    { id: 'trail:flame', type: 'trail', icon: '🔥', name: 'Płomień', price: 0, desc: 'Klasyczny ogień silnika.' },
+    { id: 'trail:rainbow', type: 'trail', icon: '🌈', name: 'Tęczowa smuga', price: 150, desc: 'Kolorowy ślad za rakietą.' },
+    { id: 'trail:stardust', type: 'trail', icon: '✨', name: 'Gwiezdny pył', price: 120, desc: 'Migoczące iskry.' },
+    { id: 'theme:nebula', type: 'theme', icon: '🟣', name: 'Mgławica', price: 0, desc: 'Domyślny motyw.' },
+    { id: 'theme:mars', type: 'theme', icon: '🔴', name: 'Mars', price: 100, desc: 'Czerwona pustynia.' },
+    { id: 'theme:aurora', type: 'theme', icon: '🟢', name: 'Zorza polarna', price: 100, desc: 'Zielono-turkusowy interfejs.' },
+    { id: 'theme:void', type: 'theme', icon: '⚫', name: 'Pustka', price: 150, desc: 'Minimalistyczny motyw monochromatyczny.' }
+  ];
+  const ACH = [
+    { id: 'first', icon: '🏁', name: 'Pierwsza ucieczka', desc: 'Ukończ misję.', reward: 30, test: () => true },
+    { id: 'reflex', icon: '⚡', name: 'Refleks kosmiczny', desc: 'Mediana reakcji poniżej 250 ms.', reward: 40, test: s => s.reaction.median < 250 },
+    { id: 'chimp', icon: '🐒', name: 'Pamięć szympansa', desc: 'Ukończ 9+ cyfr w teście szympansa.', reward: 50, test: s => s.chimp.maxLevel >= 9 },
+    { id: 'pilot', icon: '☄️', name: 'Pilot asteroid', desc: 'Przeleć 12+ bram z asteroid.', reward: 50, test: s => s.flappy.gates >= 12 },
+    { id: 'eagle', icon: '🦅', name: 'Sokole oko', desc: 'Trafiono 9+ z 10 celów w teście wzroku.', reward: 50, test: s => !!s.eye && s.eye.hits >= 9 },
+    { id: 'genius', icon: '🧠', name: 'Umysł ścisły', desc: 'Wszystkie zagadki bez błędu.', reward: 40, test: s => s.logic.correct === s.logic.total },
+    { id: 'clean', icon: '🧼', name: 'Czysta misja', desc: 'Misja bez ulepszeń ze sklepu.', reward: 30, test: s => s.boostsUsed === 0 },
+    { id: 'streak3', icon: '📅', name: 'Rutyna astronauty', desc: '3 dni z rzędu.', reward: 60, test: (s, n) => streak(n) >= 3 },
+    { id: 'elite', icon: '👑', name: 'Elita', desc: 'Wynik całkowity ≥ 85.', reward: 60, test: s => s.composite >= 85 },
+    { id: 'zen', icon: '🧘', name: 'Spokój astronauty', desc: 'Obniż stres o 2+ punkty w strefie spokoju.', reward: 40, test: s => (s.calm || []).some(c => !c.skipped && c.stressBefore - c.stressAfter >= 2) },
+    { id: 'climb', icon: '🧗', name: 'Wspinaczka', desc: 'Odblokuj poziom 3 w dowolnym pokoju.', reward: 40, test: () => false, lv: p => DOMAINS.some(([k]) => lvRec(p, k).max >= 3) },
+    { id: 'star3', icon: '🌟', name: 'Pełne gwiazdki', desc: '3 gwiazdki (92+ pkt) na poziomie 3 lub wyższym.', reward: 60, test: () => false, lv: p => DOMAINS.some(([k]) => Object.entries(lvRec(p, k).best).some(([l, b]) => +l >= 3 && b >= 92)) },
+    { id: 'master', icon: '🏔️', name: 'Mistrz poziomów', desc: 'Odblokuj poziom 5 we wszystkich pokojach.', reward: 120, test: () => false, lv: p => DOMAINS.every(([k]) => lvRec(p, k).max >= 5) }
+  ];
+
+  /* ================= audio ================= */
+  let AC = null, sndOn = localStorage.getItem(SND_KEY) !== '0';
+  function sfx(t) {
+    if (!sndOn) return;
+    try {
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      const f = { ok: [660, .08], bad: [150, .22], flap: [420, .05], win: [900, .35], buy: [760, .12], go: [520, .1], shield: [300, .25] }[t] || [440, .1];
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = t === 'bad' ? 'sawtooth' : 'sine'; o.frequency.value = f[0]; g.gain.value = 0.05;
+      o.connect(g); g.connect(AC.destination); o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + f[1]); o.stop(AC.currentTime + f[1] + .02);
+    } catch (e) { }
+  }
+
+  /* ================= puzzles ================= */
+  function makeSeries(L) {
+    L = L || 1; const t = rnd(0, L >= 3 ? 6 : L >= 2 ? 5 : 4); let seq, ans;
+    if (t === 0) { const a = rnd(1, 20), d = rnd(2, 9); seq = [0, 1, 2, 3, 4].map(i => a + i * d); ans = a + 5 * d; }
+    else if (t === 1) { const a = rnd(1, 4), r = rnd(2, 3); seq = [0, 1, 2, 3, 4].map(i => a * Math.pow(r, i)); ans = a * Math.pow(r, 5); }
+    else if (t === 2) { const a = rnd(10, 30), x = rnd(3, 9), y = rnd(1, 5); const s = [a]; for (let i = 1; i < 6; i++) s.push(s[i - 1] + (i % 2 ? x : -y)); ans = s.pop(); seq = s; }
+    else if (t === 3) { const a = rnd(1, 5), b = rnd(2, 6); const s = [a, b]; for (let i = 2; i < 6; i++) s.push(s[i - 1] + s[i - 2]); ans = s.pop(); seq = s; }
+    else if (t === 4) { const a = rnd(1, 10), d = rnd(1, 3), k = rnd(1, 2); const s = [a]; let st = d; for (let i = 1; i < 6; i++) { s.push(s[i - 1] + st); st += k; } ans = s.pop(); seq = s; }
+    else if (t === 5) { const a = rnd(1, 6); seq = [0, 1, 2, 3, 4].map(i => (i + a) * (i + a)); ans = (5 + a) * (5 + a); }
+    else { const a = rnd(1, 5), k = rnd(1, 4); const s = [a]; for (let i = 1; i < 6; i++) s.push(i % 2 ? s[i - 1] * 2 : s[i - 1] + k); ans = s.pop(); seq = s; }
+    const sp = L >= 4 ? 3 : L >= 2 ? 4 : 6, opts = new Set([ans]);
+    while (opts.size < 4) { const o = ans + rnd(-sp, sp); if (o > 0) opts.add(o); }
+    return { tag: 'Ciąg liczbowy', q: seq.join(' , ') + ' , ?', big: true, ans, opts: shuffle([...opts]) };
+  }
+  const BANK = [
+    { t: 'Zagadka', q: 'Im więcej z niego zabierasz, tym większy się staje. Co to?', a: 'Dziura', o: ['Dziura', 'Księżyc', 'Cień', 'Kometa'] },
+    { t: 'Zagadka', q: 'Zawsze jest przed tobą, a nigdy go nie zobaczysz. Co to?', a: 'Jutro', o: ['Jutro', 'Horyzont', 'Cień', 'Gwiazda'] },
+    { t: 'Zagadka', q: 'Ma miasta bez domów, lasy bez drzew i rzeki bez wody. Co to?', a: 'Mapa', o: ['Mapa', 'Teleskop', 'Planeta', 'Sen'] },
+    { t: 'Zagadka', q: 'Ma klawisze, ale nie otwiera zamków. Ma spację, ale nie ma w nim miejsca. Co to?', a: 'Klawiatura', o: ['Klawiatura', 'Pianino', 'Sejf', 'Rakieta'] },
+    { t: 'Logika', q: 'Zegar stacji pokazuje 23:30. Która godzina będzie za 90 minut?', a: '01:00', o: ['00:30', '01:00', '01:30', '00:00'] },
+    { t: 'Logika', q: 'Rakieta A startuje co 6 dni, rakieta B co 4 dni. Dziś startują razem. Za ile dni znów wystartują razem?', a: '12', o: ['10', '12', '24', '8'] },
+    { t: 'Logika', q: 'Który element NIE pasuje: Mars, Wenus, Księżyc, Jowisz?', a: 'Księżyc', o: ['Mars', 'Wenus', 'Księżyc', 'Jowisz'] },
+    { t: 'Logika', q: 'Ciąg liter: A, C, E, G, … Jaka będzie następna?', a: 'I', o: ['H', 'I', 'J', 'K'] },
+    { t: 'Logika', q: 'W module są 3 astronautki. Każda ma 2 rękawice zapasowe, a wspólnie jeszcze 4. Ile rękawic zapasowych jest razem?', a: '10', o: ['6', '8', '10', '12'] },
+    { t: 'Logika', q: 'Tlenu starcza na 6 godzin dla 1 osoby. Na ile godzin wystarczy dla 3 osób?', a: '2', o: ['2', '3', '12', '18'] }
+  ];
+  function buildLogicSet(L) {
+    L = L || 1; const qs = [];
+    for (let i = 0; i < LV.logic.series[L - 1]; i++) qs.push(makeSeries(L));
+    shuffle([...BANK]).slice(0, LV.logic.bank[L - 1]).forEach(b => qs.push({ tag: b.t, q: b.q, big: false, ans: b.a, opts: shuffle([...b.o]) }));
+    return qs;
+  }
+
+  /* ================= POZIOMY ================= */
+  // Poziom 1 = test standardowy (liczy się do rankingu). Poziomy 2-5 = trening o rosnącej trudności.
+  const MAXLVL = 5, PASS = 60;
+  const LV = {
+    reaction: { n: [5, 6, 7, 8, 10], delay: [[1500, 4000], [1200, 4500], [1000, 5000], [800, 5500], [800, 6500]], lapse: [500, 450, 400, 350, 320], ref: [600, 560, 520, 480, 450], span: [400, 360, 320, 300, 280] },
+    coordination: { n: [10, 10, 12, 12, 14], size: [46, 40, 34, 28, 22], limit: [0, 2500, 2000, 1500, 1200] },
+    chimp: { start: [4, 5, 6, 7, 8], lives: [3, 3, 3, 2, 2] },
+    flappy: { gap: [160, 150, 140, 130, 120], speed: [2.5, 2.8, 3.1, 3.4, 3.7], goal: [15, 15, 18, 20, 25] },
+    logic: { series: [3, 4, 4, 5, 5], bank: [3, 3, 4, 4, 5], tref: [30, 28, 26, 24, 22] },
+    eye: { n: [10, 10, 10, 10, 10], r: [85, 75, 65, 55, 48], hold: [1000, 1000, 1100, 1200, 1300], timeout: [3000, 2800, 2600, 2400, 2200] }
+  };
+  function levelDesc(k, L) {
+    const i = L - 1;
+    if (k === 'reaction') return `${LV.reaction.n[i]} prób · światło zmienia się po ${LV.reaction.delay[i][0] / 1000}–${LV.reaction.delay[i][1] / 1000} s · spóźnienie to reakcja powyżej ${LV.reaction.lapse[i]} ms.`;
+    if (k === 'coordination') return `${LV.coordination.n[i]} celów · średnica ${LV.coordination.size[i]} px${LV.coordination.limit[i] ? ` · cel znika po ${LV.coordination.limit[i] / 1000} s` : ''}.`;
+    if (k === 'chimp') return `Start od ${LV.chimp.start[i]} cyfr · ${LV.chimp.lives[i]} życia.`;
+    if (k === 'flappy') return `${LV.flappy.goal[i]} bram · przejście ${LV.flappy.gap[i]} px · prędkość ×${(LV.flappy.speed[i] / 2.5).toFixed(1)} · 2 podejścia.`;
+    if (k === 'eye') return `${LV.eye.n[i]} losowych celów · promień celu ${LV.eye.r[i]} px · utrzymaj wzrok ${LV.eye.hold[i] / 1000} s · limit ${LV.eye.timeout[i] / 1000} s na cel · najpierw kalibracja 9 punktów (kamera).`;
+    return `${LV.logic.series[i] + LV.logic.bank[i]} pytań · ${i >= 1 ? 'trudniejsze ciągi · ' : ''}bonus za czas liczony od ${LV.logic.tref[i]} s.`;
+  }
+  const starCount = b => b >= 92 ? 3 : b >= 80 ? 2 : b >= PASS ? 1 : 0;
+  function lvRec(p, key) { p.lv = p.lv || {}; return p.lv[key] = p.lv[key] || { max: 1, best: {} }; }
+  // nagroda w kredytach za dany poziom jest pełna raz dziennie, powtórki dają 25% (żeby nie dało się farmić kredytów)
+  function paidToday(p, tag) { const d = dayKey(Date.now()); if (!p.paid || p.paid.day !== d) p.paid = { day: d, k: {} }; return !!p.paid.k[tag]; }
+  function markPaid(p, tag) { paidToday(p, tag); p.paid.k[tag] = 1; }
+  const sessionToday = name => DB.sessions.some(s => s.astronaut === name && dayKey(s.ts) === dayKey(Date.now()));
+
+  /* ================= scoring ================= */
+  const scoreReaction = (med, lapses, fs, L) => { const i = (L || 1) - 1; return Math.round(clamp(100 * (LV.reaction.ref[i] - med) / LV.reaction.span[i] - lapses * 8 - fs * 5, 0, 100)); };
+  const scoreCoord = (avgT, avgOff, misses, hits, R) => Math.round(clamp(100 * (1800 - avgT) / 1200, 0, 100) * .45 + clamp(100 * (1 - avgOff / (R || 23)), 0, 100) * .25 + (100 * hits / Math.max(1, hits + misses)) * .30);
+  const scoreChimp = maxLevel => Math.round(clamp((maxLevel - 3) / 9 * 100, 0, 100));
+  const scoreFlappy = (gates, goal) => Math.round(clamp(gates / goal * 100, 0, 100));
+  const scoreEye = (hits, n, avgRt) => Math.round(clamp(hits / Math.max(1, n) * 85 + (hits ? clamp(15 * (2200 - avgRt) / 1500, 0, 15) : 0), 0, 100));
+  const scoreLogic = (c, n, avgT, tref) => { const t = tref || 30; return Math.round(clamp(c / n * 85 + clamp(15 * (t - avgT) / (t - 8), 0, 15), 0, 100)); };
+
+  /* ================= charts ================= */
+  function drawRadar(cv, labels, vals, acc) {
+    const c = cv.getContext('2d'), W = cv.width, H = cv.height, cx = W / 2, cy = H / 2 + 6, R = Math.min(W, H) / 2 - 36, n = labels.length;
+    c.clearRect(0, 0, W, H); c.font = '12px "Exo 2",sans-serif'; c.textAlign = 'center';
+    const pt = (i, r) => [cx + Math.cos(-Math.PI / 2 + i * 2 * Math.PI / n) * r, cy + Math.sin(-Math.PI / 2 + i * 2 * Math.PI / n) * r];
+    c.strokeStyle = 'rgba(150,170,255,.25)'; c.lineWidth = 1;
+    [.25, .5, .75, 1].forEach(k => { c.beginPath(); for (let i = 0; i <= n; i++) { const [x, y] = pt(i % n, R * k); i ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); });
+    labels.forEach((l, i) => { const [x, y] = pt(i, R); c.beginPath(); c.moveTo(cx, cy); c.lineTo(x, y); c.stroke(); const [tx, ty] = pt(i, R + 16); c.fillStyle = '#97a3d6'; c.fillText(l + ' ' + vals[i], tx, ty + 4); });
+    c.beginPath(); vals.forEach((v, i) => { const [x, y] = pt(i, R * clamp(v, 0, 100) / 100); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.closePath();
+    c.fillStyle = acc + '55'; c.fill(); c.strokeStyle = acc; c.lineWidth = 2; c.stroke();
+  }
+  function drawLine(cv, vals, acc) {
+    const c = cv.getContext('2d'), W = cv.width, H = cv.height, p = 22; c.clearRect(0, 0, W, H);
+    c.strokeStyle = 'rgba(150,170,255,.2)'; c.fillStyle = '#97a3d6'; c.font = '11px "Exo 2",sans-serif';
+    [0, 50, 100].forEach(v => { const y = H - p - (H - 2 * p) * v / 100; c.beginPath(); c.moveTo(p + 8, y); c.lineTo(W - 8, y); c.stroke(); c.fillText(v, 2, y + 4); });
+    if (!vals.length) return;
+    const X = i => p + 12 + (vals.length === 1 ? (W - 2 * p - 20) / 2 : i * (W - 2 * p - 20) / (vals.length - 1)), Y = v => H - p - (H - 2 * p) * clamp(v, 0, 100) / 100;
+    c.beginPath(); vals.forEach((v, i) => i ? c.lineTo(X(i), Y(v)) : c.moveTo(X(i), Y(v))); c.strokeStyle = acc; c.lineWidth = 2.5; c.stroke();
+    c.lineTo(X(vals.length - 1), H - p); c.lineTo(X(0), H - p); c.closePath(); c.fillStyle = acc + '25'; c.fill();
+    vals.forEach((v, i) => { c.beginPath(); c.arc(X(i), Y(v), 3.5, 0, 7); c.fillStyle = acc; c.fill(); });
+  }
+
+  /* ================= rocket drawing ================= */
+  function drawShip(c, x, y, a, skin) {
+    c.save(); c.translate(x, y); c.rotate(a);
+    if (skin === 'ufo') {
+      c.fillStyle = 'rgba(125,225,255,.9)'; c.beginPath(); c.ellipse(0, -4, 9, 9, 0, Math.PI, 0); c.fill();
+      c.fillStyle = '#a5b0c8'; c.beginPath(); c.ellipse(0, 2, 21, 7, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#ffd166'; [-11, 0, 11].forEach(dx => { c.beginPath(); c.arc(dx, 3, 2, 0, 7); c.fill(); });
+    } else {
+      const col = { classic: ['#f1f5f9', '#ef4444', '#38bdf8'], neon: ['#1e1b4b', '#f0abfc', '#22d3ee'], gold: ['#fbbf24', '#b45309', '#fff7ed'] }[skin] || ['#f1f5f9', '#ef4444', '#38bdf8'];
+      if (skin === 'neon') { c.shadowColor = '#22d3ee'; c.shadowBlur = 12; }
+      c.fillStyle = col[0]; c.beginPath(); c.moveTo(18, 0); c.quadraticCurveTo(6, -9, -14, -7); c.lineTo(-14, 7); c.quadraticCurveTo(6, 9, 18, 0); c.fill();
+      if (skin === 'neon') { c.strokeStyle = '#22d3ee'; c.lineWidth = 1.5; c.stroke(); }
+      c.shadowBlur = 0; c.fillStyle = col[1];
+      c.beginPath(); c.moveTo(-14, -7); c.lineTo(-23, -15); c.lineTo(-6, -7); c.fill();
+      c.beginPath(); c.moveTo(-14, 7); c.lineTo(-23, 15); c.lineTo(-6, 7); c.fill();
+      c.beginPath(); c.moveTo(18, 0); c.quadraticCurveTo(12, -5, 8, -5.5); c.lineTo(8, 5.5); c.quadraticCurveTo(12, 5, 18, 0); c.fill();
+      c.fillStyle = col[2]; c.beginPath(); c.arc(-1, 0, 3.6, 0, 7); c.fill();
+    }
+    c.restore();
+  }
+
+  /* ================= mount ================= */
+  function mount(host) {
+    host.innerHTML = '';
+    const root = document.createElement('div'); root.className = 'ac-root';
+    root.innerHTML = `<canvas class="ac-bg"></canvas><div class="ac-wrap">
+      <div class="ac-top"><div class="ac-title">AURORA-7<small>ASTRO COGNITIVE ESCAPE</small></div>
+        <div class="ac-chips"><span class="ac-chip" id="ac-user">👨‍🚀 —</span><span class="ac-chip">💰 <b id="ac-cred">0</b></span><button class="ac-chip" id="ac-snd" style="cursor:pointer;color:inherit"></button></div></div>
+      <div class="ac-tabs" id="ac-tabs"></div><div id="ac-body"></div></div>`;
+    host.appendChild(root);
+    const body = () => $('#ac-body', root);
+
+    /* ---- background starfield ---- */
+    (function stars() {
+      const cv = $('.ac-bg', root), c = cv.getContext('2d'); let W, H, S = [];
+      const size = () => { W = cv.width = root.clientWidth; H = cv.height = root.clientHeight; S = Array.from({ length: Math.round(W * H / 5000) }, () => ({ x: Math.random() * W, y: Math.random() * H, z: Math.random() * 3 + .3, p: Math.random() * 6 })); };
+      size(); window.addEventListener('resize', size);
+      if (window.ResizeObserver) new ResizeObserver(size).observe(root);
+      (function loop(t) {
+        if (!root.isConnected) return; requestAnimationFrame(loop);
+        c.clearRect(0, 0, W, H);
+        S.forEach(s => { s.x -= s.z * .12; if (s.x < 0) { s.x = W; s.y = Math.random() * H; } c.globalAlpha = .45 + .45 * Math.sin(t / 700 + s.p); c.fillStyle = s.z > 2.4 ? '#c4b5fd' : '#e0f2fe'; c.fillRect(s.x, s.y, s.z * .8, s.z * .8); });
+        c.globalAlpha = 1;
+      })(0);
+    })();
+
+    /* ---- lifecycle ---- */
+    let cleanups = [];
+    const leave = () => { cleanups.forEach(f => { try { f(); } catch (e) { } }); cleanups = []; };
+    const later = (fn, ms) => { const t = setTimeout(fn, ms); cleanups.push(() => clearTimeout(t)); return t; };
+    const listen = (t, ev, fn, o) => { t.addEventListener(ev, fn, o); cleanups.push(() => t.removeEventListener(ev, fn, o)); };
+    const setBody = html => { leave(); body().innerHTML = html; };
+    function toast(msg) { const t = document.createElement('div'); t.className = 'ac-toast'; t.textContent = msg; root.appendChild(t); setTimeout(() => t.remove(), 3800); }
+
+    /* ---- state ---- */
+    let user = localStorage.getItem(LAST_KEY) || '', tab = 'mission', M = null, selRank = null;
+    const P = () => user ? profile(user) : null;
+    function updateHeader() {
+      $('#ac-user', root).textContent = '👨‍🚀 ' + (user || '—');
+      $('#ac-cred', root).textContent = user ? profile(user).credits : 0;
+      $('#ac-snd', root).textContent = sndOn ? '🔊' : '🔇';
+      root.dataset.theme = user ? profile(user).theme : 'nebula';
+    }
+    $('#ac-snd', root).onclick = () => { sndOn = !sndOn; localStorage.setItem(SND_KEY, sndOn ? '1' : '0'); updateHeader(); sfx('ok'); };
+    const accent = () => getComputedStyle(root).getPropertyValue('--acc').trim() || '#7dd3fc';
+    vitalsHooks.push(() => { if (tab === 'mission') applyVitalsToForm(); });
+
+    const TABS = [['mission', '🚀 Misja'], ['rank', '🏆 Ranking'], ['shop', '🛒 Sklep'], ['rewards', '🎁 Nagrody'], ['coord', '📦 Koordynator'], ['profile', '👨‍🚀 Profil'], ['data', '💾 Dane']];
+    function go(t) {
+      tab = t; updateHeader();
+      $('#ac-tabs', root).innerHTML = TABS.map(([k, l]) => `<button class="ac-tab ${k === tab ? 'on' : ''}" data-t="${k}">${l}</button>`).join('');
+      root.querySelectorAll('.ac-tab').forEach(b => b.onclick = () => go(b.dataset.t));
+      ({ mission: viewHome, rank: viewRank, shop: viewShop, rewards: viewRewards, coord: viewCoord, profile: viewProfile, data: viewData })[tab]();
+    }
+    const needUser = () => { setBody(`<div class="ac-card">Najpierw zarejestruj się w zakładce <b>Misja</b> (podaj ID astronauty).</div>`); };
+
+    /* ================= STAGES ================= */
+    const STAGES = [
+      { key: 'reaction', room: 'Śluza', icon: '🚪', title: 'ŚLUZA A-1', story: 'Zasilanie awaryjne. Śluza otworzy się tylko, gdy złapiesz moment zmiany lampy na zielono. Nie klikaj za wcześnie!', how: '5 prób · kliknij lub naciśnij spację, gdy lampa zrobi się zielona.', run: stageReaction },
+      { key: 'coordination', room: 'Sterownia', icon: '🎛️', title: 'STEROWNIA', story: 'Panele sterownicze iskrzą. Zresetuj je, trafiając w pulsujące moduły jak najszybciej i jak najdokładniej.', how: '10 celów · celuj w środek.', run: stageCoord },
+      { key: 'chimp', room: 'Laboratorium', icon: '🧪', title: 'LABORATORIUM · ZAMEK SZYFROWY', story: 'Zamek pokazuje cyfry tylko przez chwilę. Zapamiętaj ich pozycje: po kliknięciu „1” reszta znika!', how: 'Klikaj cyfry rosnąco. Zaczynasz od 4 cyfr, 3 życia.', run: stageChimp, equip: ['life'] },
+      { key: 'flappy', room: 'Kapsuła', icon: '🚀', title: 'KAPSUŁA RATUNKOWA', story: 'Kapsuła odpala, ale przed Tobą pole asteroid. Przeleć przez pole bram, aby uciec z orbity.', how: 'Dotyk / klik / spacja = silnik. 2 podejścia, liczy się lepsze.', run: stageFlappy, equip: ['shield', 'slowmo'] },
+      { key: 'logic', room: 'Komputer', icon: '🧠', title: 'KOMPUTER POKŁADOWY', story: 'Ostatni zamek: komputer pyta o ciągi, zagadki i logikę. Odpowiedz poprawnie, by uzyskać ostatnią cyfrę kodu.', how: '6 pytań · możesz użyć podpowiedzi (kosztują punkty).', run: stageLogic, equip: [] },
+      { key: 'eye', room: 'Obserwatorium', icon: '👁️', title: 'OBSERWATORIUM', story: 'W obserwatorium Oculusa wskaźniki sterują się samym wzrokiem. Skalibruj spojrzenie, a potem namierz 10 losowych celów i utrzymaj na każdym wzrok.', how: 'Kalibracja 9 punktów, potem 10 losowych celów (kamera).', run: stageEye, equip: [] },
+      { key: 'calm_breath', calm: true, room: 'Spokój', icon: '🧘', title: 'STREFA SPOKOJU · ODDECH', story: 'Wykryto podwyższony stres. Zanim ruszysz dalej, zwolnij i oddychaj razem z kołem: wdech 4 s, zatrzymanie 4 s, wydech 4 s, zatrzymanie 4 s.', how: '4 cykle (ok. 1 minuta). Możesz pominąć.', run: stageBreath },
+      { key: 'calm_ground', calm: true, room: 'Uziemienie', icon: '🌿', title: 'STREFA SPOKOJU · 5-4-3-2-1', story: 'Technika uziemiająca: skup uwagę na zmysłach, aby obniżyć napięcie.', how: '5 krótkich kroków. Możesz pominąć.', run: stageGround }
+    ];
+
+    const stageByKey = Object.fromEntries(STAGES.map(s => [s.key, s]));
+
+    // kaczka na żywo: średnia z ukończonych pokoi (przed pierwszym pokojem: neutralna)
+    function liveDuck() {
+      const sc = Object.values(M.results).filter(r => r && r.score != null).map(r => r.score);
+      if (!sc.length) return `<div class="ac-duckbox">${duckImg('bezNoza', 44, 'Czeka na pierwszy wynik')}<span>start</span></div>`;
+      const a = Math.round(mean(sc)), id = duckFor(a, null, 0);
+      return `<div class="ac-duckbox">${duckImg(id, 44, duckLabel(id))}<span>${a} pkt</span></div>`;
+    }
+    /* ---- planety ---- */
+    const PLANETS = {
+      reaction: { name: 'Błyskon', x: 240, y: 120, r: 44, c1: '#fdba74', c2: '#c2410c', kind: 'gas', story: 'Na Błyskonie lądujesz w awaryjnej kopule. Zasilanie zanika, a bramę otworzy tylko błyskawiczna reakcja: kliknij w chwili, gdy lampa zrobi się zielona. Nie klikaj za wcześnie!' },
+      coordination: { name: 'Celestia', x: 430, y: 335, r: 50, c1: '#7dd3fc', c2: '#1d4ed8', kind: 'ring', story: 'Stacja przekaźnikowa Celestii iskrzy. Zresetuj panele sterownicze, trafiając w pulsujące moduły jak najszybciej i jak najdokładniej.' },
+      chimp: { name: 'Mnemos', x: 520, y: 110, r: 42, c1: '#d8b4fe', c2: '#6d28d9', kind: 'gas', story: 'Zamek szyfrowy na Mnemosie pokazuje cyfry tylko przez chwilę. Zapamiętaj ich położenie: po kliknięciu „1” reszta znika!' },
+      flappy: { name: 'Asteria', x: 690, y: 300, r: 40, c1: '#a8a29e', c2: '#44403c', kind: 'rock', story: 'Asteria otoczona jest polem asteroid. Odpal kapsułę ratunkową i przeleć przez bramy między skałami, aby uciec z orbity.' },
+      eye: { name: 'Oculus', x: 335, y: 225, r: 38, c1: '#5eead4', c2: '#0f766e', kind: 'gas', story: 'Obserwatorium na Oculusie śledzi Twoje spojrzenie. Skalibruj wzrok i trafiaj oczami w losowo pojawiające się cele. Potrzebna jest kamera.' },
+      logic: { name: 'Logos', x: 700, y: 115, r: 40, c1: '#86efac', c2: '#15803d', kind: 'ring', story: 'Na Logosie czeka komputer pokładowy. Odpowiedz na ciągi, zagadki i zadania logiczne, by zdobyć ostatnią cyfrę kodu.' }
+    };
+    const HOME = { x: 85, y: 395, r: 32 }, MOON = { x: 205, y: 262, r: 22 };
+    const ttl = k => stageByKey[k].calm ? stageByKey[k].title : PLANETS[k].name.toUpperCase();
+    let spacePos = null, lastLanded = null;
+    function hud(cur) {
+      return `<div class="ac-hud"><div class="ac-rooms">${DOMAINS.map(([k]) => { const s = stageByKey[k], cls = M.results[k] ? 'done' : cur === k ? 'cur' : ''; return `<div class="ac-room ${cls}">${s.icon}<br>${PLANETS[k].name}</div>`; }).join('')}</div>
+        <div class="ac-code">${DOMAINS.map(([k], n) => `<span class="${M.results[k] ? 'on' : ''}">${M.results[k] ? M.code[n] : '•'}</span>`).join('')}</div>${liveDuck()}</div>`;
+    }
+
+    /* ---- ekran główny = kosmos ---- */
+    function viewHome() { viewSpace(); }
+    function missingMeasurements() {
+      const miss = [];
+      if (!M || M.user !== user) miss.push('Skan medyczny na stacji (samopoczucie)');
+      REQ.forEach(k => { if (!vitalOK(k)) miss.push(VITAL_FIELDS[k].label); });
+      return miss;
+    }
+    const reqMissing = () => REQ.filter(k => !vitalOK(k));
+    const reqInputs = () => reqMissing().map(k => { const f = VITAL_FIELDS[k]; return `<label class="ac-field">${f.label}<input data-v="${k}" type="number" step="${f.step}" min="${f.min}" max="${f.max}" placeholder="wpisz pomiar"></label>`; }).join('');
+    function readReq() {
+      const vals = {}; let ok = true;
+      root.querySelectorAll('input[data-v]').forEach(i => { const f = VITAL_FIELDS[i.dataset.v], v = parseFloat(String(i.value).replace(',', '.')); if (!(v >= f.min && v <= f.max)) { ok = false; i.style.borderColor = 'var(--bad)'; } else vals[i.dataset.v] = v; });
+      if (!ok) { toast('Uzupełnij pomiary (dozwolony zakres wartości)'); return false; }
+      if (Object.keys(vals).length) setVitals(vals); return true;
+    }
+
+    /* ---- stacja medyczna: tu wykonuje się pomiar ---- */
+    function viewStation() {
+      const miss = reqMissing();
+      if (M && M.user === user) {
+        const c = M.checkin;
+        setBody(`${hud(null)}<div class="ac-card"><h3>🛰 STACJA MEDYCZNA</h3>
+          <div class="ac-good" style="margin-bottom:8px">✔ Skan wykonany: sen ${c.sleep} h · zmęczenie ${c.fatigue}/5 · nastrój ${c.mood}/5 · stres ${c.stress}/5</div>
+          ${vitalsLine() ? `<div class="ac-note ac-vb" style="margin-bottom:10px">${vitalsLine()}</div>` : ''}
+          ${miss.length ? `<div class="ac-flag" style="margin:8px 0">⚠ Brakujący pomiar: wykonaj go, aby odblokować planety.</div><div class="ac-row">${reqInputs()}</div><button class="ac-btn pri" id="ac-vsave" style="margin-top:10px">Zapisz pomiar</button>` : ''}
+          <div class="ac-row" style="margin-top:12px"><button class="ac-btn pri" id="ac-fly">🚀 W kosmos</button><button class="ac-btn" id="ac-plan">🧭 Dobór na dziś</button><button class="ac-btn ghost" id="ac-redo">Nowy skan</button></div></div>`);
+        const vs = $('#ac-vsave', root); if (vs) vs.onclick = () => { if (readReq()) { sfx('ok'); viewStation(); } };
+        $('#ac-fly', root).onclick = () => { sfx('go'); viewSpace(); }; $('#ac-plan', root).onclick = viewPlan; $('#ac-redo', root).onclick = () => { M = null; viewStation(); };
+        return;
+      }
+      setBody(`<div class="ac-card"><h3>🛰 STACJA MEDYCZNA · SKAN</h3>
+        <div class="ac-note" style="margin-bottom:10px">Zanim polecisz na jakąkolwiek planetę, lekarz pokładowy zbiera dane o Twoim samopoczuciu. Bez pomiaru planety są zablokowane.</div>
+        <div id="ac-vbadge" class="ac-note ac-vb" style="margin-bottom:10px"></div>
+        <div class="ac-row"><label class="ac-field">ID astronauty<input id="ac-name" value="${esc(user)}" placeholder="np. A-01"></label>
+          <label class="ac-field">Sen (godz.)<input id="ac-sleep" type="number" min="0" max="14" step="0.5" value="7"></label></div>
+        <div class="ac-row" style="margin-top:10px">
+          <label class="ac-field">Zmęczenie (1 brak – 5 ekstremalne)<select id="ac-fat">${[1, 2, 3, 4, 5].map(n => `<option ${n === 2 ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+          <label class="ac-field">Nastrój (1 zły – 5 świetny)<select id="ac-mood">${[1, 2, 3, 4, 5].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+          <label class="ac-field">Stres (1 niski – 5 wysoki)<select id="ac-str">${[1, 2, 3, 4, 5].map(n => `<option ${n === 2 ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
+        ${miss.length ? `<div class="ac-flag" style="margin:12px 0 6px">📡 Wymagane pomiary (brak z modułu pomiarowego, wpisz ręcznie):</div><div class="ac-row">${reqInputs()}</div>` : ''}</div>
+        <div class="ac-note" style="margin-bottom:12px">Po skanie odpalisz silniki i polecisz rakietą do planet. Każda planeta to inna kategoria zadań, a poziom 1 jest testem standardowym do rankingu.</div>
+        <div class="ac-row"><button class="ac-btn pri" id="ac-start">🧭 Wykonaj pomiar</button><button class="ac-btn ghost" id="ac-back">← W kosmos</button></div>`);
+      applyVitalsToForm();
+      $('#ac-back', root).onclick = viewSpace;
+      $('#ac-start', root).onclick = () => {
+        const name = $('#ac-name', root).value.trim(); if (!name) { $('#ac-name', root).focus(); return; }
+        if (reqMissing().length && !readReq()) return;
+        user = name; localStorage.setItem(LAST_KEY, name); profile(name); saveDB(); updateHeader();
+        const checkin = { sleep: +$('#ac-sleep', root).value, fatigue: +$('#ac-fat', root).value, mood: +$('#ac-mood', root).value, stress: +$('#ac-str', root).value };
+        const pl = planMission(name, checkin);
+        M = { user: name, results: {}, earned: 0, checkin, planInfo: pl, calmLog: [], curStress: checkin.stress,
+          ctx: { stress: pl.flags.stress, fatigue: pl.flags.fatigue, vitals: Object.assign({}, VITALS), reasons: pl.reasons }, code: DOMAINS.map(() => rnd(0, 9)) };
+        sfx('go'); viewPlan();
+      };
+    }
+
+    function vitalsFresh() { return !VITALS.ts || Date.now() - VITALS.ts < 864e5; }
+    function vitalsLine() {
+      if (!vitalsFresh()) return '';
+      const v = VITALS, parts = [];
+      if (num(v.hr) !== null) parts.push(`tętno ${v.hr} bpm`);
+      if (num(v.hrv) !== null) parts.push(`HRV ${v.hrv} ms`);
+      if (num(v.spo2) !== null) parts.push(`SpO₂ ${v.spo2}%`);
+      if (num(v.temp) !== null) parts.push(`${v.temp}°C`);
+      return parts.length ? `📡 Dane z modułu pomiarowego: ${parts.join(' · ')}` : '';
+    }
+    // wstępnie wypełnia formularz check-inu danymi z modułu pomiarowego (jeśli są)
+    function applyVitalsToForm() {
+      const b = $('#ac-vbadge', root); if (!b) return;
+      const v = vitalsFresh() ? VITALS : {};
+      const set = (id, val, lo, hi) => { const n = num(val), el = $('#' + id, root); if (n !== null && el) el.value = String(clamp(Math.round(n), lo, hi)); };
+      const sl = $('#ac-sleep', root); if (sl && num(v.sleepHours) !== null) sl.value = clamp(num(v.sleepHours), 0, 14);
+      set('ac-fat', v.fatigue, 1, 5); set('ac-str', v.stress, 1, 5); set('ac-mood', v.mood, 1, 5);
+      b.textContent = vitalsLine() || 'Brak danych z modułu pomiarowego. Uzupełnij ręcznie (aplikacja może je przekazać przez AstroCognition.setVitals).';
+    }
+
+    /* ---- dobór misji ---- */
+    function viewPlan() {
+      const pl = M.planInfo, f = pl.flags;
+      setBody(`<div class="ac-card"><h3>🧭 DOBÓR MISJI NA DZISIAJ</h3>
+        ${vitalsLine() ? `<div class="ac-note ac-vb" style="margin-bottom:10px">${vitalsLine()}</div>` : ''}
+        ${pl.warnings.map(w => `<div class="${w[0] === 'bad' ? 'ac-bad' : 'ac-flag'}" style="margin:6px 0">⚠ ${w[1]}</div>`).join('')}
+        <div style="margin:10px 0">${pl.reasons.map(r => `<div style="margin:6px 0">${r}</div>`).join('')}</div>
+        <div class="ac-note">Polecana kolejność: ${pl.plan.map(k => `${stageByKey[k].icon} ${stageByKey[k].room}`).join(' → ')}</div>
+        <div class="ac-note" style="margin-top:8px">Dobór opiera się na prostych regułach (to nie jest diagnoza medyczna). W kosmosie możesz lecieć na planety w dowolnej kolejności.</div></div>
+        <div class="ac-row"><button class="ac-btn pri" id="ac-pgo">🚀 Odpal silniki</button>
+          ${f.stressHigh || pl.warnings.length ? `<button class="ac-btn" id="ac-pcalm">🧘 Zacznij od Księżyca spokoju</button>` : ''}
+          <button class="ac-btn ghost" id="ac-pback">← Wstecz</button></div>`);
+      $('#ac-pgo', root).onclick = () => { sfx('go'); viewMap(); };
+      const pc = $('#ac-pcalm', root); if (pc) pc.onclick = () => { sfx('go'); viewSpace(); };
+      $('#ac-pback', root).onclick = () => { M = null; viewStation(); };
+    }
+
+    /* ---- kosmos: latanie rakietą między planetami ---- */
+    const canFinalize = () => !!M && DOMAINS.every(([k]) => M.results[k]) && !sessionToday(M.user);
+    function viewMap() { viewSpace(); }
+    function viewSpace() {
+      const W = 800, H = 460, miss = missingMeasurements(), locked = miss.length > 0, prof = user ? profile(user) : null;
+      const pl = M ? M.planInfo : null, weak = pl ? (pl.weak || []) : [];
+      const nextRec = pl ? pl.plan.filter(k => !stageByKey[k].calm).find(k => !M.results[k]) : null;
+      const bodies = [{ id: 'home', name: 'Stacja Aurora-7', x: HOME.x, y: HOME.y, r: HOME.r, kind: 'station', free: true },
+        { id: 'calm', name: 'Księżyc spokoju', x: MOON.x, y: MOON.y, r: MOON.r, kind: 'moon', c1: '#e5e7eb', c2: '#6b7280' }]
+        .concat(DOMAINS.map(([k]) => Object.assign({ id: k }, PLANETS[k])));
+      const byId = id => bodies.find(b => b.id === id), isLocked = b => locked && !b.free;
+      setBody(`${M ? hud(null) : ''}
+        ${locked ? `<div class="ac-card"><h3>🔒 PLANETY ZABLOKOWANE</h3><div>Nie możesz lądować na planetach, dopóki nie wykonasz brakującego pomiaru:</div><ul class="ac-miss">${miss.map(m => `<li>📡 ${esc(m)}</li>`).join('')}</ul><button class="ac-btn pri" id="ac-tostation">🛰 Poleć na stację medyczną</button></div>` : ''}
+        <canvas id="ac-space" class="ac-space" width="${W}" height="${H}"></canvas>
+        <div class="ac-spmsg" id="ac-spmsg"></div>
+        <div class="ac-row" style="justify-content:center">${canFinalize() ? '<button class="ac-btn pri" id="ac-fin">🚀 Zakończ test dnia</button>' : ''}${M ? '<button class="ac-btn" id="ac-plan">🧭 Dobór na dziś</button>' : ''}</div>`);
+      const cv = $('#ac-space', root), c = cv.getContext('2d'), msg = $('#ac-spmsg', root);
+      const say = (t, warn) => { msg.textContent = t; msg.className = 'ac-spmsg' + (warn ? ' warn' : ''); };
+      const defMsg = () => say(locked ? 'Planety są zablokowane (pole siłowe). Poleć na stację medyczną i wykonaj pomiar.' : 'Dotknij planety, aby do niej polecieć i wylądować. Sterowanie ręczne: strzałki lub WASD.', locked);
+      defMsg();
+      const sp = { x: 150, y: 360, vx: 0, vy: 0, ang: -0.4, tx: null, ty: null, tgt: null, mode: 'free', t: 0, scale: 1, body: null, from: null, to: null, cool: 0 };
+      if (lastLanded && byId(lastLanded)) {
+        const b = byId(lastLanded), dx = W / 2 - b.x, dy = H / 2 - b.y, dl = Math.hypot(dx, dy) || 1;
+        sp.mode = 'takeoff'; sp.x = b.x; sp.y = b.y; sp.from = { x: b.x, y: b.y }; sp.to = { x: clamp(b.x + dx / dl * (b.r + 54), 20, W - 20), y: clamp(b.y + dy / dl * (b.r + 54), 20, H - 20) }; sp.ang = Math.atan2(dy, dx); sp.scale = .15; lastLanded = null;
+      } else if (spacePos) { sp.x = spacePos.x; sp.y = spacePos.y; }
+      const stars = Array.from({ length: 110 }, () => ({ x: Math.random() * W, y: Math.random() * H, z: Math.random() * 1.8 + .3, p: Math.random() * 6 }));
+      const keys = {}, trail = [], skin = prof ? prof.skin : 'classic', tkind = prof ? prof.trail : 'flame';
+      let raf = 0, last = performance.now();
+      const pt = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / (r.width || W), y: (e.clientY - r.top) * H / (r.height || H) }; };
+      const hitBody = q => bodies.find(b => Math.hypot(q.x - b.x, q.y - b.y) <= b.r + 16);
+      function land(b) { spacePos = { x: b.x, y: b.y }; lastLanded = b.id; sfx('win'); if (b.id === 'home') viewStation(); else viewPlanet(b.id); }
+      function update(dt) {
+        sp.t += dt; if (sp.cool > 0) sp.cool -= dt;
+        trail.forEach(q => q.life -= .03 * dt); while (trail.length && trail[0].life <= 0) trail.shift();
+        if (sp.mode === 'landing') {
+          const k = clamp(sp.t / 42, 0, 1), e = k * k * (3 - 2 * k);
+          sp.x = sp.from.x + (sp.body.x - sp.from.x) * e; sp.y = sp.from.y + (sp.body.y - sp.from.y) * e; sp.scale = 1 - .85 * e;
+          if (k >= 1) { sp.mode = 'landed'; land(sp.body); } return;
+        }
+        if (sp.mode === 'landed') return;
+        if (sp.mode === 'takeoff') {
+          const k = clamp(sp.t / 38, 0, 1), e = k * k * (3 - 2 * k);
+          sp.x = sp.from.x + (sp.to.x - sp.from.x) * e; sp.y = sp.from.y + (sp.to.y - sp.from.y) * e; sp.scale = .15 + .85 * e;
+          if (k >= 1) { sp.mode = 'free'; sp.scale = 1; } return;
+        }
+        const ax = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0), ay = (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+        if (ax || ay) { sp.tx = null; sp.tgt = null; const l = Math.hypot(ax, ay); sp.vx += ax / l * .3 * dt; sp.vy += ay / l * .3 * dt; }
+        else if (sp.tx !== null) {
+          const dx = sp.tx - sp.x, dy = sp.ty - sp.y, d = Math.hypot(dx, dy) || 1, v = Math.min(5.5, d * .08);
+          sp.vx += (dx / d * v - sp.vx) * .1 * dt; sp.vy += (dy / d * v - sp.vy) * .1 * dt;
+          if (d < 4 && !sp.tgt) { sp.tx = null; sp.ty = null; }
+        } else { sp.vx *= Math.pow(.96, dt); sp.vy *= Math.pow(.96, dt); }
+        const spd = Math.hypot(sp.vx, sp.vy); if (spd > 6) { sp.vx *= 6 / spd; sp.vy *= 6 / spd; }
+        sp.x += sp.vx * dt; sp.y += sp.vy * dt;
+        if (sp.x < 16) { sp.x = 16; sp.vx = Math.abs(sp.vx) * .3; } if (sp.x > W - 16) { sp.x = W - 16; sp.vx = -Math.abs(sp.vx) * .3; }
+        if (sp.y < 16) { sp.y = 16; sp.vy = Math.abs(sp.vy) * .3; } if (sp.y > H - 16) { sp.y = H - 16; sp.vy = -Math.abs(sp.vy) * .3; }
+        if (spd > .25) { let da = Math.atan2(sp.vy, sp.vx) - sp.ang; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; sp.ang += da * .18 * Math.min(dt, 2); }
+        for (const b of bodies) {
+          const d = Math.hypot(sp.x - b.x, sp.y - b.y);
+          if (isLocked(b)) {
+            const rf = b.r + 26;
+            if (d < rf) {
+              const nx = (sp.x - b.x) / (d || 1), ny = (sp.y - b.y) / (d || 1); sp.x = b.x + nx * rf; sp.y = b.y + ny * rf; sp.vx = nx * 1.2; sp.vy = ny * 1.2;
+              if (sp.tgt === b.id) { sp.tx = null; sp.ty = null; sp.tgt = null; }
+              if (sp.cool <= 0) { sp.cool = 60; sfx('bad'); say(`🔒 ${b.name}: pole siłowe nie wpuszcza rakiety. Brakujący pomiar: ${miss.join(', ')}.`, true); }
+            }
+          } else if (d < b.r + 8) { sp.mode = 'landing'; sp.t = 0; sp.body = b; sp.from = { x: sp.x, y: sp.y }; sp.tx = null; sp.ty = null; sp.tgt = null; sp.vx = 0; sp.vy = 0; break; }
+        }
+        if (Math.hypot(sp.vx, sp.vy) > .5) trail.push({ x: sp.x - Math.cos(sp.ang) * 16, y: sp.y - Math.sin(sp.ang) * 16, life: 1, hue: (sp.t * 8) % 360 });
+      }
+      function planetBody(b, ts) {
+        const lk = isLocked(b);
+        if (b.kind === 'ring') { c.strokeStyle = lk ? 'rgba(200,200,220,.25)' : 'rgba(255,255,255,.45)'; c.lineWidth = 3; c.beginPath(); c.ellipse(b.x, b.y, b.r * 1.75, b.r * .45, -.35, Math.PI, 2 * Math.PI); c.stroke(); }
+        const g = c.createRadialGradient(b.x - b.r * .35, b.y - b.r * .35, b.r * .1, b.x, b.y, b.r); g.addColorStop(0, b.c1); g.addColorStop(1, b.c2);
+        c.shadowColor = b.c1; c.shadowBlur = lk ? 0 : 24; c.fillStyle = g; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 7); c.fill(); c.shadowBlur = 0;
+        c.save(); c.beginPath(); c.arc(b.x, b.y, b.r, 0, 7); c.clip();
+        if (b.kind === 'gas' || b.kind === 'ring') { c.strokeStyle = 'rgba(255,255,255,.16)'; c.lineWidth = 5; for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(b.x - b.r, b.y + i * b.r * .34); c.quadraticCurveTo(b.x, b.y + i * b.r * .34 + 8, b.x + b.r, b.y + i * b.r * .34); c.stroke(); } }
+        else if (b.kind === 'rock' || b.kind === 'moon') { c.fillStyle = 'rgba(0,0,0,.25)'; [[-.35, -.2, .22], [.3, .1, .28], [-.1, .45, .16], [.35, -.45, .14]].forEach(q => { c.beginPath(); c.arc(b.x + q[0] * b.r, b.y + q[1] * b.r, q[2] * b.r, 0, 7); c.fill(); }); }
+        c.restore();
+        if (b.kind === 'ring') { c.strokeStyle = lk ? 'rgba(200,200,220,.25)' : 'rgba(255,255,255,.55)'; c.lineWidth = 3; c.beginPath(); c.ellipse(b.x, b.y, b.r * 1.75, b.r * .45, -.35, 0, Math.PI); c.stroke(); }
+      }
+      function station(b) {
+        c.save(); c.translate(b.x, b.y); c.shadowColor = '#7dd3fc'; c.shadowBlur = 16;
+        c.fillStyle = '#cbd5e1'; c.fillRect(-26, -5, 52, 10); c.fillStyle = '#94a3b8'; c.beginPath(); c.arc(0, 0, 14, 0, 7); c.fill(); c.shadowBlur = 0;
+        c.fillStyle = '#38bdf8'; c.fillRect(-60, -14, 28, 28); c.fillRect(32, -14, 28, 28); c.strokeStyle = '#0c4a6e'; c.lineWidth = 1; c.strokeRect(-60, -14, 28, 28); c.strokeRect(32, -14, 28, 28);
+        c.fillStyle = '#e8ecff'; c.beginPath(); c.arc(0, 0, 5, 0, 7); c.fill(); c.restore();
+      }
+      function draw(ts) {
+        const bg = c.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#050816'); bg.addColorStop(1, '#140c33'); c.fillStyle = bg; c.fillRect(0, 0, W, H);
+        stars.forEach(s => { c.globalAlpha = .4 + .5 * Math.sin(ts / 700 + s.p); c.fillStyle = '#e0f2fe'; c.fillRect(s.x, s.y, s.z, s.z); }); c.globalAlpha = 1;
+        c.textAlign = 'center';
+        bodies.forEach(b => {
+          const lk = isLocked(b);
+          if (b.kind === 'station') station(b); else planetBody(b, ts);
+          if (lk) { c.fillStyle = 'rgba(5,8,22,.5)'; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 7); c.fill(); c.save(); c.setLineDash([6, 6]); c.strokeStyle = 'rgba(251,191,36,.7)'; c.lineWidth = 2; c.beginPath(); c.arc(b.x, b.y, b.r + 26, 0, 7); c.stroke(); c.restore(); c.font = '22px sans-serif'; c.fillStyle = '#fff'; c.fillText('🔒', b.x, b.y + 8); }
+          if (!lk && b.id === nextRec) { c.strokeStyle = `rgba(125,211,252,${.4 + .4 * Math.sin(ts / 300)})`; c.lineWidth = 3; c.beginPath(); c.arc(b.x, b.y, b.r + 10 + 3 * Math.sin(ts / 300), 0, 7); c.stroke(); }
+          c.fillStyle = '#e8ecff'; c.font = '700 13px Orbitron,sans-serif'; c.fillText(b.name, b.x, b.y + b.r + (b.kind === 'station' ? 24 : 18));
+          c.font = '12px "Exo 2",sans-serif'; c.fillStyle = '#97a3d6';
+          let sub = '';
+          if (b.kind === 'station') sub = M ? '✔ skan wykonany' : '⚠ wymagany pomiar';
+          else if (b.id === 'calm') sub = 'strefa spokoju';
+          else if (!lk) { const lv = lvRec(prof, b.id), r = M && M.results[b.id]; sub = `poz. ${lv.max}/${MAXLVL}${r ? ' · ✔ ' + r.score : ''}${weak.includes(b.id) ? ' · 📉' : ''}`; }
+          else sub = 'zablokowana';
+          c.fillText(sub, b.x, b.y + b.r + (b.kind === 'station' ? 40 : 33));
+        });
+        trail.forEach(q => { c.globalAlpha = clamp(q.life, 0, 1);
+          if (tkind === 'rainbow') c.fillStyle = `hsl(${q.hue},100%,60%)`; else if (tkind === 'stardust') c.fillStyle = '#e0f2fe'; else c.fillStyle = q.life > .5 ? '#fde68a' : '#fb923c';
+          c.beginPath(); c.arc(q.x, q.y, 3.5 * q.life + 1, 0, 7); c.fill(); }); c.globalAlpha = 1;
+        c.save(); c.translate(sp.x, sp.y); c.scale(sp.scale, sp.scale); drawShip(c, 0, 0, sp.ang, skin); c.restore();
+      }
+      function frame(ts) { raf = requestAnimationFrame(frame); if (!cv.isConnected) { cancelAnimationFrame(raf); return; } const dt = clamp((ts - last) / 16.67, .3, 3); last = ts; update(dt); draw(ts); }
+      cleanups.push(() => cancelAnimationFrame(raf));
+      listen(cv, 'pointerdown', e => {
+        if (sp.mode !== 'free') return; const q = pt(e), b = hitBody(q);
+        if (b) { sp.tx = b.x; sp.ty = b.y; sp.tgt = b.id; say(`Lecisz do: ${b.name}…`); }
+        else { sp.tx = clamp(q.x, 16, W - 16); sp.ty = clamp(q.y, 16, H - 16); sp.tgt = null; defMsg(); }
+      });
+      listen(cv, 'pointermove', e => { cv.style.cursor = hitBody(pt(e)) ? 'pointer' : 'crosshair'; });
+      listen(document, 'keydown', e => { if (/^(Arrow(Up|Down|Left|Right)|Key[WASD])$/.test(e.code)) { if (e.code.startsWith('Arrow')) e.preventDefault(); keys[e.code] = true; } });
+      listen(document, 'keyup', e => { keys[e.code] = false; });
+      const ts_ = $('#ac-tostation', root); if (ts_) ts_.onclick = () => { if (sp.mode === 'free') { sp.tx = HOME.x; sp.ty = HOME.y; sp.tgt = 'home'; say('Lecisz do: Stacja Aurora-7…'); } };
+      const fin = $('#ac-fin', root); if (fin) fin.onclick = viewFinale;
+      const pb = $('#ac-plan', root); if (pb) pb.onclick = viewPlan;
+      raf = requestAnimationFrame(frame);
+    }
+
+    /* ---- po wylądowaniu: wybór zadania (poziomu) na planecie ---- */
+    function viewPlanet(key) {
+      if (missingMeasurements().length) return viewSpace();
+      const p = profile(M.user);
+      if (key === 'calm') {
+        const rec = M.planInfo.plan.filter(k => stageByKey[k].calm);
+        setBody(`${hud('calm')}<div class="ac-card"><div class="ac-planetrow"><div class="ac-pdisc" style="background:radial-gradient(circle at 30% 30%,#e5e7eb,#6b7280);--pg:rgba(203,213,225,.4)"></div><div><h3>🌙 KSIĘŻYC SPOKOJU</h3><div class="ac-note">Cichy księżyc, na którym możesz zwolnić tempo. Ćwiczenia obniżają stres i dają kredyty (pełna nagroda raz dziennie).</div></div></div>
+          <div class="ac-row"><button class="ac-btn ${rec.includes('calm_breath') ? 'pri' : ''}" data-calm="calm_breath">🧘 Oddech${rec.includes('calm_breath') ? ' · polecane' : ''}</button><button class="ac-btn ${rec.includes('calm_ground') ? 'pri' : ''}" data-calm="calm_ground">🌿 5-4-3-2-1${rec.includes('calm_ground') ? ' · polecane' : ''}</button><button class="ac-btn ghost" id="ac-takeoff">🚀 Wystartuj</button></div></div>`);
+        root.querySelectorAll('[data-calm]').forEach(b => b.onclick = () => viewIntro(b.dataset.calm));
+        $('#ac-takeoff', root).onclick = () => { sfx('go'); viewSpace(); }; return;
+      }
+      const P = PLANETS[key], lv = lvRec(p, key), r = M.results[key], s = stageByKey[key], weak = (M.planInfo.weak || []).includes(key);
+      const nextRec = M.planInfo.plan.filter(k => !stageByKey[k].calm).find(k => !M.results[k]);
+      const btns = [1, 2, 3, 4, 5].map(L => {
+        const open = L <= lv.max, st = starCount(lv.best[L] || 0);
+        return `<button class="ac-lvb ${open ? '' : 'lock'} ${L === 1 ? 'std' : ''}" data-l="${L}" ${open ? '' : 'disabled'} title="${esc(levelDesc(key, L))}"><b>${open ? L : '🔒'}</b><small>${open ? '★'.repeat(st) + '☆'.repeat(3 - st) : '&nbsp;'}</small></button>`;
+      }).join('');
+      setBody(`${hud(key)}<div class="ac-card"><div class="ac-planetrow"><div class="ac-pdisc" style="background:radial-gradient(circle at 30% 30%,${P.c1},${P.c2});--pg:${P.c1}77"></div>
+          <div style="flex:1;min-width:220px"><h3>${s.icon} ${P.name.toUpperCase()}</h3><div>${P.story}</div>
+          <div style="margin-top:8px">${r ? `<span class="ac-st delivered">test dnia: ${r.score}</span> ` : key === nextRec ? '<span class="ac-st pending">▶ polecana dziś</span> ' : ''}${weak ? '<span class="ac-st cancelled">📉 słabszy ostatnio</span>' : ''}</div></div></div>
+        <div class="ac-h">Wybierz zadanie (poziom)</div><div class="ac-lv">${btns}</div>
+        <div class="ac-note" style="margin-top:10px"><b>Poziom 1 to test standardowy</b> (liczy się do rankingu i trendu zdrowotnego). Wyższe poziomy są treningowe: ${PASS}+ pkt odblokowuje następny, a gwiazdki to 60 / 80 / 92 pkt. Najedź na poziom, by zobaczyć jego zasady.</div>
+        <div class="ac-row" style="margin-top:12px"><button class="ac-btn ghost" id="ac-takeoff">🚀 Wystartuj z planety</button>${canFinalize() ? '<button class="ac-btn pri" id="ac-fin">🚀 Zakończ test dnia</button>' : ''}</div></div>`);
+      root.querySelectorAll('.ac-lvb:not(:disabled)').forEach(b => b.onclick = () => viewIntro(key, +b.dataset.l));
+      $('#ac-takeoff', root).onclick = () => { sfx('go'); viewSpace(); };
+      const fin = $('#ac-fin', root); if (fin) fin.onclick = viewFinale;
+    }
+
+    /* ---- stage intro ---- */
+    function viewIntro(key, L) {
+      const s = stageByKey[key], p = profile(M.user), calm = !!s.calm; L = L || 1;
+      const items = (s.equip || []).filter(k => p.inv[k] > 0);
+      const names = { life: '❤️ Dodatkowe życie', shield: '🛡️ Tarcza', slowmo: '🐌 Spowolnienie' };
+      setBody(`${hud(key)}<div class="ac-card"><h3>${s.icon} ${ttl(key)}${calm ? '' : ` · POZIOM ${L}`}</h3><p>${calm ? s.story : PLANETS[key].story}</p><p class="ac-note">${calm ? s.how : levelDesc(key, L)}</p>
+        ${calm ? '' : L === 1 ? '<div class="ac-note">📋 Poziom 1 to test standardowy: liczy się do rankingu i trendu zdrowotnego.</div>' : `<div class="ac-note">Poziom treningowy: nie wpływa na ranking, daje gwiazdki i więcej kredytów (×${(1 + .25 * (L - 1)).toFixed(2)}).</div>`}
+        ${items.length ? `<div class="ac-note" style="margin-top:8px">Wyposażenie (każde użycie odejmuje punkty od wyniku pokoju):</div><div class="ac-equip">${items.map(k => `<label><input type="checkbox" data-k="${k}"> ${names[k]} (×${p.inv[k]})</label>`).join('')}</div>` : ''}
+        ${key === 'logic' ? `<div class="ac-note">Masz podpowiedzi: <b>${p.inv.hint}</b> (💡 używasz ich w trakcie pytań).</div>` : ''}
+        <div class="ac-row" style="margin-top:12px"><button class="ac-btn pri" id="ac-go">Wejdź do pokoju</button><button class="ac-btn ghost" id="ac-quit">← Wróć na planetę</button></div></div>`);
+      $('#ac-go', root).onclick = () => { const opts = {}; root.querySelectorAll('.ac-equip input:checked').forEach(c => opts[c.dataset.k] = true); runStage(key, L, opts); };
+      $('#ac-quit', root).onclick = () => viewPlanet(calm ? 'calm' : key);
+    }
+    function runStage(key, L, opts) {
+      const s = stageByKey[key];
+      setBody(`${hud(key)}<div class="ac-card"><h3>${s.icon} ${ttl(key)}${s.calm ? '' : ` · POZIOM ${L}`}</h3><div id="ac-stage"></div></div>`);
+      sfx('go'); s.run($('#ac-stage', root), Object.assign({ long: M.ctx.fatigue >= 4, lvl: L }, opts), res => s.calm ? calmDone(key, res) : stageDone(key, L, res));
+    }
+    function awardLevelAch(p) {
+      ACH.forEach((a, k) => { if (a.lv && !p.ach.includes(a.id) && a.lv(p)) { p.ach.push(a.id); p.credits += a.reward; setTimeout(() => toast(`${a.icon} Odznaka: ${a.name} (+${a.reward} 💰)`), 700 + k * 40); } });
+    }
+    function stageDone(key, L, res) {
+      const p = profile(M.user), used = res.used || {}, s = stageByKey[key]; let pen = 0, boostN = 0;
+      Object.keys(used).forEach(k => { const n = used[k] | 0; if (n > 0) { p.inv[k] = Math.max(0, (p.inv[k] || 0) - n); pen += n * (k === 'hint' ? 4 : 5); boostN += n; } });
+      res.score = Math.max(0, Math.round(res.score - pen)); res.penalty = pen; res.boostN = boostN; res.lvl = L;
+      const lv = lvRec(p, key); let unlocked = false;
+      if (res.score > (lv.best[L] || 0)) lv.best[L] = res.score;
+      if (res.score >= PASS && L === lv.max && L < MAXLVL) { lv.max = L + 1; unlocked = true; }
+      const tag = key + ':' + L, first = !paidToday(p, tag), base = Math.round((res.score * .6 + 10) * (1 + .25 * (L - 1))), earn = first ? base : Math.round(base * .25);
+      markPaid(p, tag); p.credits += earn; M.earned += earn; res.earned = earn;
+      if (L === 1) M.results[key] = res;
+      awardLevelAch(p); saveDB(); updateHeader(); sfx('win');
+      const st = starCount(res.score), fin = canFinalize(), nextOpen = L < MAXLVL && L + 1 <= lv.max;
+      setBody(`${hud(key)}<div class="ac-card" style="text-align:center"><div class="ac-note">${ttl(key)} · POZIOM ${L} · UKOŃCZONO</div>
+        <div class="ac-duckrow">${duckImg(duckFor(res.score, null, 0), 96)}</div><div class="ac-big">${res.score}/100</div>
+        <div style="font-size:1.6rem;margin:4px 0">${'★'.repeat(st)}${'☆'.repeat(3 - st)}</div>
+        ${unlocked ? `<p class="ac-good"><b>🔓 Odblokowano poziom ${L + 1}!</b></p>` : res.score < PASS && L === lv.max && L < MAXLVL ? `<p class="ac-note">Do odblokowania kolejnego poziomu potrzebujesz ${PASS} pkt.</p>` : ''}
+        ${L === 1 ? `<p>Cyfra kodu ucieczki: <b style="font:700 1.6rem Orbitron">${M.code[DOMAINS.findIndex(d => d[0] === key)]}</b></p>` : ''}
+        <p class="ac-note">+${earn} 💰${first ? '' : ' (powtórka: 25% nagrody)'}${pen ? ` · kara za ulepszenia: −${pen} pkt` : ''}${L === 1 && sessionToday(M.user) ? ' · trening: test dnia był już zapisany' : ''}</p>
+        <div class="ac-row" style="justify-content:center">${fin ? '<button class="ac-btn pri" id="ac-fin">🚀 Zakończ test dnia</button>' : ''}${nextOpen ? `<button class="ac-btn ${fin ? '' : 'pri'}" id="ac-nl">Poziom ${L + 1} ▶</button>` : ''}<button class="ac-btn" id="ac-rp">↻ Powtórz</button><button class="ac-btn" id="ac-mp">🪐 Planeta</button><button class="ac-btn ghost" id="ac-sp">🚀 W kosmos</button></div></div>`);
+      const f = $('#ac-fin', root); if (f) f.onclick = viewFinale;
+      const nl = $('#ac-nl', root); if (nl) nl.onclick = () => viewIntro(key, L + 1);
+      $('#ac-rp', root).onclick = () => viewIntro(key, L); $('#ac-mp', root).onclick = () => viewPlanet(key); $('#ac-sp', root).onclick = () => { sfx('go'); viewSpace(); };
+    }
+
+    /* ---- 1. REACTION ---- */
+    function stageReaction(box, opts, done) {
+      const L = opts.lvl || 1, RP = LV.reaction, N = L === 1 ? (opts.long ? 7 : 5) : RP.n[L - 1], dly = RP.delay[L - 1], lapThr = RP.lapse[L - 1], times = [];
+      let fs = 0, state = 'idle', t0 = 0, trial = 0, timer = null;
+      box.innerHTML = `<div class="ac-prog"><i id="ac-p"></i></div><div class="ac-airlock" id="ac-r"><div class="ac-lamp"></div><div class="ac-rtxt">Kliknij / spacja, aby uzbroić śluzę</div></div>`;
+      const el = $('#ac-r', box), txt = $('.ac-rtxt', el), p = $('#ac-p', box);
+      const arm = () => {
+        state = 'wait'; el.className = 'ac-airlock wait'; txt.textContent = 'Czekaj…';
+        timer = setTimeout(() => { state = 'go'; el.className = 'ac-airlock go'; txt.textContent = 'TERAZ!'; t0 = now(); }, rnd(dly[0], dly[1]));
+        cleanups.push(() => clearTimeout(timer));
+      };
+      const hit = () => {
+        if (state === 'done') return;
+        if (state === 'idle') return arm();
+        if (state === 'wait') { clearTimeout(timer); fs++; sfx('bad'); state = 'idle'; el.className = 'ac-airlock'; txt.textContent = 'Za wcześnie! Kliknij, aby spróbować ponownie.'; return; }
+        if (state === 'go') {
+          const rt = Math.round(now() - t0); times.push(rt); trial++; p.style.width = trial / N * 100 + '%'; state = 'idle'; el.className = 'ac-airlock'; sfx('ok');
+          if (trial >= N) {
+            state = 'done';
+            const med = Math.round(median(times)), lapses = times.filter(x => x > lapThr).length;
+            txt.innerHTML = `${rt} ms<br><small>mediana ${med} ms</small>`;
+            const res = { median: med, mean: Math.round(mean(times)), lapses, falseStarts: fs, trials: times, score: scoreReaction(med, lapses, fs, L) };
+            later(() => done(res), 1100);
+          } else txt.innerHTML = `${rt} ms<br><small>Kliknij, aby kontynuować (${trial}/${N})</small>`;
+        }
+      };
+      listen(el, 'pointerdown', hit);
+      listen(document, 'keydown', e => { if (e.code === 'Space') { e.preventDefault(); hit(); } });
+    }
+
+    /* ---- 6. WZROK · eye tracking kamerą (MediaPipe): kalibracja 9 pkt → 10 losowych celów → analiza ---- */
+    const MP_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+    const MP_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+    let EYE_LM = null;
+    async function eyeLoadLM() {
+      const { FaceLandmarker, FilesetResolver } = await import(MP_BASE + '/vision_bundle.mjs');
+      const fs = await FilesetResolver.forVisionTasks(MP_BASE + '/wasm');
+      const mk = d => FaceLandmarker.createFromOptions(fs, { baseOptions: { modelAssetPath: MP_MODEL, delegate: d }, runningMode: 'VIDEO', numFaces: 1, outputFacialTransformationMatrixes: true });
+      try { return await mk('GPU'); } catch (e) { return await mk('CPU'); }
+    }
+    function eyeFeat(res, v) {
+      const L = res.faceLandmarks && res.faceLandmarks[0], Mx = res.facialTransformationMatrixes && res.facialTransformationMatrixes[0];
+      if (!L || !Mx) return null;
+      const m = Mx.data, vw = v.videoWidth, vh = v.videoHeight, Pt = i => ({ x: L[i].x * vw, y: L[i].y * vh });
+      const eye = (a, b, ir, tp, bt) => {
+        const A = Pt(a), B = Pt(b), I = Pt(ir), T = Pt(tp), D = Pt(bt), w = Math.hypot(B.x - A.x, B.y - A.y), ux = (B.x - A.x) / w, uy = (B.y - A.y) / w, dx = I.x - (A.x + B.x) / 2, dy = I.y - (A.y + B.y) / 2;
+        return { ox: (dx * ux + dy * uy) / w, oy: (-dx * uy + dy * ux) / w, open: Math.hypot(T.x - D.x, T.y - D.y) / w };
+      };
+      const r = eye(33, 133, 468, 159, 145), l = eye(362, 263, 473, 386, 374), d = 180 / Math.PI;
+      return { ox: (r.ox + l.ox) / 2, oy: (r.oy + l.oy) / 2, open: Math.min(r.open, l.open),
+        yaw: Math.atan2(m[8], m[10]) * d, pitch: Math.atan2(-m[9], Math.hypot(m[8], m[10])) * d, roll: Math.atan2(m[1], m[0]) * d, tx: m[12], ty: m[13], tz: m[14] };
+    }
+    const eyeVec = f => [1, f.ox, f.oy, f.ox * f.ox, f.oy * f.oy, f.ox * f.oy, f.yaw, f.pitch, f.tx, f.ty];
+    function eyeFit(samples) {
+      const LAMBDA = 1, X = samples.map(s => eyeVec(s.f)), d = X[0].length, n = X.length, mu = Array(d).fill(0), sd = Array(d).fill(1);
+      for (let j = 1; j < d; j++) { mu[j] = X.reduce((a, r) => a + r[j], 0) / n; sd[j] = Math.sqrt(X.reduce((a, r) => a + (r[j] - mu[j]) ** 2, 0) / n) || 1; }
+      const Z = X.map(r => r.map((v, j) => j ? (v - mu[j]) / sd[j] : 1));
+      const solve = t => {
+        const A = Array.from({ length: d }, (_, i) => { const row = Array(d + 1).fill(0); for (let j = 0; j < d; j++) { let s = 0; for (let k = 0; k < n; k++) s += Z[k][i] * Z[k][j]; row[j] = s + (i && i === j ? LAMBDA : 0); } let b = 0; for (let k = 0; k < n; k++) b += Z[k][i] * t[k]; row[d] = b; return row; });
+        for (let i = 0; i < d; i++) { let p = i; for (let r = i + 1; r < d; r++) if (Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r;[A[i], A[p]] = [A[p], A[i]]; for (let r = 0; r < d; r++) if (r !== i) { const q = A[r][i] / A[i][i]; for (let c = i; c <= d; c++) A[r][c] -= q * A[i][c]; } }
+        return A.map((r, i) => r[d] / r[i]);
+      };
+      return { mu, sd, wx: solve(samples.map(s => s.x)), wy: solve(samples.map(s => s.y)) };
+    }
+    function eyePredict(model, f) { const z = eyeVec(f).map((v, j) => j ? (v - model.mu[j]) / model.sd[j] : 1); let x = 0, y = 0; for (let j = 0; j < z.length; j++) { x += z[j] * model.wx[j]; y += z[j] * model.wy[j]; } return [x, y]; }
+    const EYE_ZONES = ['↖ lewa góra', '↑ góra', '↗ prawa góra', '← lewa', '● środek', '→ prawa', '↙ lewy dół', '↓ dół', '↘ prawy dół'];
+    const eyeZone = (x, y) => (y < .4 ? 0 : y < .62 ? 3 : 6) + (x < .34 ? 0 : x < .66 ? 1 : 2);
+
+    function stageEye(box, opts, done) {
+      const L = opts.lvl || 1, li = L - 1, E = LV.eye, N = E.n[li], R = E.r[li], HOLD = E.hold[li], TMO = E.timeout[li], GAP = 450;
+      const CAL = []; [.17, .5, .83].forEach(y => [.1, .5, .9].forEach(x => CAL.push([x, y])));
+      box.innerHTML = `<div class="ac-note" style="text-align:center;max-width:560px;margin:0 auto">
+        <p><b>Jak to działa:</b> najpierw kalibracja (9 świecących punktów), potem <b>${N} losowych celów</b>. Nakryj cel kropką, która pokazuje, gdzie patrzysz, i utrzymaj spojrzenie <b>${HOLD / 1000} s</b> (na każdy cel masz ${TMO / 1000} s). Na końcu zobaczysz analizę: ile celów się udało i gdzie.</p>
+        <p>Ustaw głowę prosto, ok. 50–70 cm od ekranu, przy dobrym świetle twarzy. Nie ruszaj głową podczas testu. Obraz z kamery jest przetwarzany lokalnie i nigdzie nie jest wysyłany. Przy pierwszym uruchomieniu pobierany jest model (wymagany internet).</p></div>
+        <div class="ac-row" style="justify-content:center;margin-top:12px"><button class="ac-btn pri" id="ac-eye-go">👁 Uruchom kamerę i kalibrację</button><button class="ac-btn ghost" id="ac-eye-no">← Wróć na planetę</button></div>`;
+      $('#ac-eye-no', box).onclick = () => viewPlanet('eye');
+      $('#ac-eye-go', box).onclick = launch;
+
+      function launch() {
+        const ov = document.createElement('div'); ov.className = 'ac-eye-ov';
+        const cs = getComputedStyle(root); ['--acc', '--acc2', '--line', '--txt', '--mut', '--ok', '--warn', '--bad'].forEach(k => { const v = cs.getPropertyValue(k).trim(); if (v) ov.style.setProperty(k, v); });
+        ov.innerHTML = `<canvas class="eye-cv"></canvas><video class="eye-cam" playsinline muted></video>
+          <div class="eye-hud"><span>👁 WZROK · POZIOM ${L}</span><span id="eh-b"></span><button class="ac-btn" id="eh-q">✕ Przerwij</button></div>
+          <div class="eye-panel" id="eh-p"></div>
+          <div class="eye-pause" id="eh-pause"><div>TRENING WSTRZYMANY</div><small>Ustaw głowę prosto</small></div>
+          <div class="eye-bot"><span>GŁOWA <b id="eh-head" class="eye-ok">STABILNA</b></span><span id="eh-msg"></span><span>PATRZ NA CEL · NIE RUSZAJ GŁOWĄ</span></div>`;
+        document.body.appendChild(ov);
+        const $o = s => ov.querySelector(s);
+        try { if (ov.requestFullscreen) ov.requestFullscreen().catch(() => { }); } catch (e) { }
+        const cv = $o('.eye-cv'), c = cv.getContext('2d'), vid = $o('.eye-cam'), P = $o('#eh-p');
+        let alive = true, raf = 0, stream = null, lastVT = -1, refPose = null, model = null, collect = null, cur = null, lostCount = 0, calibErr = null, ph = 'init', tick0 = 0, W = innerWidth, H = innerHeight;
+        const G = { x: -999, y: -999, sx: null, sy: null, lost: false }, S = { face: false, pose: null, motion: 0, t: 0 }, head = { paused: false, badSince: 0, okSince: 0, breaks: 0 };
+        const size = () => { const d = devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; c.setTransform(d, 0, 0, d, 0, 0); };
+        size(); listen(window, 'resize', size);
+        cleanups.push(() => { alive = false; cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(t => t.stop()); ov.remove(); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } });
+        const wait = ms => new Promise(r => later(r, ms));
+        $o('#eh-q').onclick = () => viewPlanet('eye');
+
+        const runTarget = t => new Promise(res => { Object.assign(t, { headIssue: false, reaction: null, holdMs: 0, elapsed: 0, started: false, minD: Infinity, lostN: 0, born: performance.now(), res }); cur = t; });
+        const finish = ok => { const t = cur; cur = null; if (t) { t.ok = ok; t.res(t); } };
+        const setGaze = (v, x, y) => {
+          if (v) { const X = clamp(x, 0, 1) * W, Y = clamp(y, 0, 1) * H; if (G.sx === null) { G.sx = X; G.sy = Y; } else { G.sx += .3 * (X - G.sx); G.sy += .3 * (Y - G.sy); } G.x = G.sx; G.y = G.sy; G.lost = false; }
+          else if (!G.lost) { G.lost = true; if (cur && !cur.calib) { lostCount++; cur.lostN++; } }
+        };
+        function detect() {
+          if (!EYE_LM || !stream || vid.readyState < 2 || vid.currentTime === lastVT) return;
+          lastVT = vid.currentTime;
+          let res; try { res = EYE_LM.detectForVideo(vid, performance.now()); } catch (e) { return; }
+          const f = eyeFeat(res, vid); S.t = performance.now(); S.face = !!f; S.pose = f;
+          if (!f) { S.motion = refPose ? 99 : 0; if (model) setGaze(false); return; }
+          if (refPose) { const sh = Math.hypot(f.tx - refPose.tx, f.ty - refPose.ty, (f.tz - refPose.tz) * .6), rot = Math.max(Math.abs(f.yaw - refPose.yaw), Math.abs(f.pitch - refPose.pitch), Math.abs(f.roll - refPose.roll)); S.motion = 9 * Math.max(sh / 2.5, rot / 6); } else S.motion = 0;
+          const blink = f.open < .14;
+          if (collect && !blink) collect.push(f);
+          if (model && !blink) { const [p, q] = eyePredict(model, f); setGaze(true, p, q); }
+        }
+        function updateHead(now) {
+          const lvl = S.motion > 18 ? 2 : S.motion > 9 ? 1 : 0;
+          if (lvl === 2) { head.okSince = 0; if (!head.badSince) head.badSince = now; if (!head.paused && now - head.badSince > 500) { head.paused = true; head.breaks++; } }
+          else { head.badSince = 0; if (lvl === 0) { if (!head.okSince) head.okSince = now; if (head.paused && now - head.okSince > 700) head.paused = false; } else head.okSince = 0; }
+          const st = head.paused ? 'pause' : lvl ? 'warn' : 'ok';
+          if (st !== 'ok' && cur && !cur.calib) cur.headIssue = true;
+          const h = $o('#eh-head'), m = $o('#eh-msg');
+          h.textContent = st === 'pause' ? 'NIESTABILNA' : st === 'warn' ? 'RUCH' : 'STABILNA'; h.className = st === 'pause' ? 'eye-bad' : st === 'warn' ? 'eye-warn' : 'eye-ok';
+          m.textContent = st === 'pause' ? 'TRENING WSTRZYMANY' : st === 'warn' ? 'UWAGA – UTRZYMAJ GŁOWĘ' : ''; m.className = st === 'pause' ? 'eye-bad' : 'eye-warn';
+          $o('#eh-pause').style.display = head.paused ? 'flex' : 'none';
+        }
+        function marker() {
+          if (G.x < -500) return;
+          const t = cur, lost = G.lost;
+          if (lost) { c.strokeStyle = 'rgba(251,191,36,.8)'; c.lineWidth = 2; c.setLineDash([4, 4]); c.beginPath(); c.arc(G.x, G.y, 14, 0, 7); c.stroke(); c.setLineDash([]); c.fillStyle = '#fbbf24'; c.font = '14px sans-serif'; c.textAlign = 'left'; c.fillText('UTRATA POMIARU WZROKU – ZADANIE WSTRZYMANE', 20, H - 70); return; }
+          const hit = t && !t.manual && Math.hypot(G.x - t.x * W, G.y - t.y * H) < R, col = hit ? '#4ade80' : '#fb923c';
+          c.strokeStyle = col; c.globalAlpha = .5; c.lineWidth = 2; c.beginPath(); c.arc(G.x, G.y, 20, 0, 7); c.stroke(); c.globalAlpha = 1;
+          c.fillStyle = col; c.shadowColor = col; c.shadowBlur = 18; c.beginPath(); c.arc(G.x, G.y, 9, 0, 7); c.fill(); c.shadowBlur = 0;
+          c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.beginPath(); c.arc(G.x, G.y, 9, 0, 7); c.stroke();
+        }
+        function drawCal(t, ts) {
+          const px = t.x * W, py = t.y * H, p = 1 + Math.sin(ts / 150) * .12;
+          c.strokeStyle = 'rgba(125,211,252,.4)'; c.lineWidth = 1; c.beginPath(); c.arc(px, py, R * p, 0, 7); c.stroke();
+          c.fillStyle = '#7dd3fc'; c.shadowColor = '#7dd3fc'; c.shadowBlur = 20; c.beginPath(); c.arc(px, py, 12, 0, 7); c.fill(); c.shadowBlur = 0;
+          c.strokeStyle = '#4ade80'; c.lineWidth = 4; c.beginPath(); c.arc(px, py, R, -Math.PI / 2, -Math.PI / 2 + (t.prog || 0) * Math.PI * 2); c.stroke();
+          c.fillStyle = 'rgba(232,236,255,.7)'; c.font = '15px sans-serif'; c.textAlign = 'center'; c.fillText('PATRZ NA ŚWIECĄCY PUNKT · NIE RUSZAJ GŁOWĄ', W / 2, H / 2 + 120);
+        }
+        function draw(ts) {
+          c.clearRect(0, 0, W, H);
+          if (ph !== 'cal' && ph !== 'test') { tick0 = ts; return; }
+          updateHead(ts);
+          const dt = G.lost ? 0 : Math.min(ts - (tick0 || ts), 100); tick0 = ts;
+          const t = cur; if (!t) return marker();
+          if (t.manual) return drawCal(t, ts);
+          if (head.paused || ts - t.born < GAP) return marker();
+          if (!t.started) { t.started = true; t.elapsed = 0; }
+          t.elapsed += dt;
+          const px = t.x * W, py = t.y * H, d = Math.hypot(G.x - px, G.y - py), inside = d < R && !G.lost;
+          if (!G.lost && d < t.minD) t.minD = d;
+          if (inside && t.reaction === null) t.reaction = t.elapsed;
+          if (inside) { t.holdMs += dt; if (t.holdMs >= HOLD) { t.holdTime = t.holdMs; return finish(true); } } else t.holdMs = 0;
+          if (t.elapsed >= TMO) return finish(false);
+          const prog = Math.min(t.holdMs / HOLD, 1), pulse = 1 + Math.sin(ts / 180) * .06;
+          c.strokeStyle = 'rgba(125,211,252,.35)'; c.lineWidth = 1; c.beginPath(); c.arc(px, py, R * pulse, 0, 7); c.stroke();
+          c.beginPath(); c.moveTo(px - R - 14, py); c.lineTo(px - R + 10, py); c.moveTo(px + R - 10, py); c.lineTo(px + R + 14, py); c.moveTo(px, py - R - 14); c.lineTo(px, py - R + 10); c.moveTo(px, py + R - 10); c.lineTo(px, py + R + 14); c.stroke();
+          c.fillStyle = inside ? '#4ade80' : '#7dd3fc'; c.shadowColor = c.fillStyle; c.shadowBlur = 20; c.beginPath(); c.arc(px, py, 12, 0, 7); c.fill(); c.shadowBlur = 0;
+          if (prog > 0) { c.strokeStyle = '#4ade80'; c.lineWidth = 4; c.beginPath(); c.arc(px, py, R, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2); c.stroke(); }
+          c.fillStyle = 'rgba(232,236,255,.35)'; c.fillRect(px - R, py + R + 14, 2 * R * (1 - t.elapsed / TMO), 2);
+          marker();
+        }
+        function frame(ts) { if (!alive) return; raf = requestAnimationFrame(frame); detect(); draw(ts); }
+
+        const failEnd = msg => { ph = 'fail'; P.style.display = 'flex'; P.innerHTML = `<h3>👁 ${msg}</h3><button class="ac-btn pri" id="eh-back">← Wróć na planetę</button>`; $o('#eh-back').onclick = () => viewPlanet('eye'); };
+        function genPoints(n) {
+          const out = []; let guard = 0;
+          while (out.length < n && guard++ < 2000) {
+            const x = .08 + Math.random() * .84, y = .17 + Math.random() * .66, p = out[out.length - 1];
+            if (p && guard < 1500 && Math.hypot((x - p.x) * W, (y - p.y) * H) < Math.min(W, H) * .3) continue;
+            out.push({ x, y });
+          }
+          return out;
+        }
+
+        (async function run() {
+          P.style.display = 'flex'; P.innerHTML = '<h3>👁 ŁADOWANIE MODELU</h3><div class="eye-note">Przygotowuję śledzenie wzroku… (pierwszy raz wymaga internetu)</div>';
+          try { if (!EYE_LM) EYE_LM = await eyeLoadLM(); } catch (e) { return failEnd('Nie można załadować modelu MediaPipe (wymagany internet).'); }
+          if (!alive) return;
+          try { stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, audio: false }); }
+          catch (e) { return failEnd('Brak dostępu do kamery. Zezwól na jej użycie w przeglądarce.'); }
+          if (!alive) { stream.getTracks().forEach(t => t.stop()); return; }
+          vid.srcObject = stream; vid.play().catch(() => { }); ph = 'check'; raf = requestAnimationFrame(frame);
+
+          /* 1) kontrola pozycji głowy */
+          const row = (t, ok) => `<div class="${ok ? 'eye-ok' : 'eye-bad'}">${ok ? '✔' : '✘'} ${t}</div>`;
+          let okSince = 0, acc = [];
+          while (alive) {
+            await wait(120); if (!alive) return;
+            const f = (performance.now() - S.t < 500 && S.face) ? S.pose : null, dist = f ? Math.abs(f.tz) : 0;
+            const cD = f && dist > 35 && dist < 85, cH = f && Math.abs(f.yaw) < 12 && Math.abs(f.pitch) < 18 && Math.abs(f.roll) < 12, good = f && cD && cH;
+            P.innerHTML = `<h3>👁 PRZYGOTOWANIE ASTRONAUTY</h3><div class="eye-checks">${row('Kamera dostępna', true)}${row('Twarz w polu widzenia', !!f)}${row('Odległość od ekranu' + (f ? ' ≈ ' + Math.round(dist) + ' cm' : '') + ' (35–85 cm)', !!cD)}${row('Głowa w prawidłowej pozycji', !!cH)}</div>
+              <div class="eye-msg ${good ? 'eye-ok' : 'eye-warn'}">${good ? 'POZYCJA STABILNA – TRZYMAJ' : 'USTAW GŁOWĘ PROSTO'}</div><div class="eye-note">Ustaw głowę prosto, w odległości ok. 50–70 cm od ekranu.</div>`;
+            if (good) { if (!okSince) okSince = performance.now(); acc.push(f); if (performance.now() - okSince > 1500) break; } else { okSince = 0; acc = []; }
+          }
+          const k = a => acc.reduce((s, f) => s + f[a], 0) / acc.length;
+          refPose = { tx: k('tx'), ty: k('ty'), tz: k('tz'), yaw: k('yaw'), pitch: k('pitch'), roll: k('roll') };
+
+          /* 2) kalibracja spojrzenia (9 punktów) */
+          P.style.display = 'none'; ph = 'cal'; sfx('go');
+          const samples = [];
+          for (let i = 0; i < CAL.length; i++) {
+            $o('#eh-b').textContent = `KALIBRACJA ${i}/${CAL.length}`;
+            const t = { x: CAL[i][0], y: CAL[i][1], calib: true, manual: true, prog: 0 }, pr = runTarget(t);
+            await wait(900); if (!alive) return;
+            const buf = []; collect = buf; const t0 = performance.now();
+            while (alive && buf.length < 20 && performance.now() - t0 < 4000) { t.prog = buf.length / 20; await wait(40); }
+            collect = null; if (!alive) return;
+            buf.forEach(f => samples.push({ f, x: t.x, y: t.y })); finish(true); await pr;
+          }
+          if (samples.length < 80) return failEnd('Za mało poprawnych pomiarów oczu. Popraw oświetlenie twarzy i spróbuj ponownie.');
+          model = eyeFit(samples);
+          let err = 0; samples.forEach(s => { const [p, q] = eyePredict(model, s.f); err += Math.hypot((p - s.x) * W, (q - s.y) * H); }); calibErr = Math.round(err / samples.length);
+          $o('#eh-b').textContent = `KALIBRACJA OK · błąd ≈ ${calibErr} px`; sfx('win'); await wait(1600); if (!alive) return;
+
+          /* 3) N losowych celów */
+          ph = 'test'; head.breaks = 0; lostCount = 0;
+          const pts = genPoints(N), done_ = [];
+          for (let i = 0; i < pts.length; i++) {
+            $o('#eh-b').textContent = `CEL ${i + 1}/${N}`;
+            const t = Object.assign({ idx: i + 1, calib: false }, pts[i]);
+            const r = await runTarget(t); if (!alive) return;
+            sfx(r.ok ? 'ok' : 'bad'); done_.push(r);
+          }
+          ph = 'report'; c.clearRect(0, 0, W, H); $o('#eh-pause').style.display = 'none'; $o('#eh-msg').textContent = '';
+          if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+          report(done_);
+        })();
+
+        /* 4) analiza końcowa */
+        function report(list) {
+          const rs = list.map((t, i) => ({ n: i + 1, x: +t.x.toFixed(3), y: +t.y.toFixed(3), ok: !!t.ok, reaction: t.reaction === null ? null : Math.round(t.reaction), hold: Math.round(t.holdTime || 0), minD: isFinite(t.minD) ? Math.round(t.minD) : null, head: !!t.headIssue, lost: t.lostN || 0, zone: eyeZone(t.x, t.y) }));
+          const n = rs.length, hits = rs.filter(r => r.ok), touched = rs.filter(r => !r.ok && r.reaction !== null), far = rs.filter(r => !r.ok && r.reaction === null);
+          const avgRt = hits.length ? mean(hits.map(r => r.reaction)) : 0, avgHold = hits.length ? mean(hits.map(r => r.hold)) : 0, pct = Math.round(hits.length / Math.max(1, n) * 100);
+          const zones = EYE_ZONES.map((name, z) => { const a = rs.filter(r => r.zone === z); return { name, total: a.length, hits: a.filter(r => r.ok).length }; });
+          const score = scoreEye(hits.length, n, avgRt);
+          const res = { hits: hits.length, total: n, hitPct: pct, touched: touched.length, missed: far.length, avgReaction: Math.round(avgRt), avgHold: Math.round(avgHold), headBreaks: head.breaks, lostCount, calibErr, zones, points: rs, radius: R, hold: HOLD, timeout: TMO, score };
+          const fs_ = ms => ms ? (ms / 1000).toFixed(2).replace('.', ',') + ' s' : '—';
+          const why = r => r.ok ? '<span class="eye-ok">✔ trafiony</span>' : r.reaction !== null ? '<span class="eye-warn">◐ dotknięty, nieutrzymany</span>' : '<span class="eye-bad">✘ nie dotarł do celu</span>';
+          P.style.display = 'flex';
+          P.innerHTML = `<h3>👁 ANALIZA · WZROK</h3>
+            <div class="eye-grid">
+              <div class="eye-kpi"><b>${hits.length}/${n}</b><span>celów trafionych (${pct}%)</span></div>
+              <div class="eye-kpi"><b>${touched.length}</b><span>dotknięte, ale nieutrzymane</span></div>
+              <div class="eye-kpi"><b>${far.length}</b><span>nie dotarł do celu</span></div>
+              <div class="eye-kpi"><b>${hits.length ? fs_(avgRt) : '—'}</b><span>śr. czas dotarcia do celu</span></div>
+              <div class="eye-kpi"><b>${score}/100</b><span>wynik</span></div></div>
+            <div class="eye-ana"><div><div class="eye-h">Mapa celów</div><canvas id="eh-map" style="width:100%;max-width:380px;border:1px solid var(--line);border-radius:10px;background:rgba(5,8,22,.6)"></canvas>
+              <div class="eye-note" style="margin-top:6px"><span class="eye-ok">●</span> trafiony · <span class="eye-warn">●</span> dotknięty · <span class="eye-bad">●</span> chybiony</div></div>
+              <div><div class="eye-h">Wg obszaru ekranu</div><table class="eye-t"><thead><tr><th>Obszar</th><th>Trafione</th><th>Skuteczność</th></tr></thead><tbody>${zones.map(z => `<tr><td>${z.name}</td><td>${z.total ? z.hits + '/' + z.total : '—'}</td><td>${z.total ? Math.round(z.hits / z.total * 100) + '%' : '—'}</td></tr>`).join('')}</tbody></table></div></div>
+            <div style="width:min(780px,94vw)"><div class="eye-h">Wszystkie cele</div><table class="eye-t"><thead><tr><th>#</th><th>Obszar</th><th>Wynik</th><th>Dotarcie</th><th>Utrzymanie</th><th>Min. odl.</th></tr></thead><tbody>${rs.map(r => `<tr><td>${r.n}</td><td>${EYE_ZONES[r.zone]}</td><td>${why(r)}${r.head ? ' · ruch głowy' : ''}${r.lost ? ' · utrata pomiaru' : ''}</td><td>${fs_(r.reaction)}</td><td>${r.ok ? fs_(r.hold) : '—'}</td><td>${r.minD === null ? '—' : r.minD + ' px'}</td></tr>`).join('')}</tbody></table></div>
+            <div class="eye-note">Cel: promień ${R} px, utrzymanie ${HOLD / 1000} s, limit ${TMO / 1000} s · błąd kalibracji ≈ ${calibErr} px · przerwy przez ruch głowy: ${head.breaks} · utracone pomiary wzroku: ${lostCount}.${calibErr > R * 1.5 ? ' <span class="eye-warn">Kalibracja była słaba, wynik jest orientacyjny.</span>' : ''}<br>Wskaźniki treningowe, nie diagnoza medyczna. Kamera laptopa daje jedynie orientacyjną ocenę.</div>
+            <button class="ac-btn pri" id="eh-next">Dalej ▶</button>`;
+          const mm = $o('#eh-map'); mm.width = 380; mm.height = Math.max(120, Math.round(380 * H / W));
+          const m = mm.getContext('2d'); m.strokeStyle = 'rgba(150,170,255,.2)'; m.lineWidth = 1;
+          [1 / 3, 2 / 3].forEach(f => { m.beginPath(); m.moveTo(mm.width * f, 0); m.lineTo(mm.width * f, mm.height); m.moveTo(0, mm.height * f); m.lineTo(mm.width, mm.height * f); m.stroke(); });
+          rs.forEach(r => { const x = r.x * mm.width, y = r.y * mm.height, col = r.ok ? '#4ade80' : r.reaction !== null ? '#fbbf24' : '#f87171'; m.fillStyle = col; m.globalAlpha = .9; m.beginPath(); m.arc(x, y, 12, 0, 7); m.fill(); m.globalAlpha = 1; m.fillStyle = '#05101f'; m.font = '700 11px sans-serif'; m.textAlign = 'center'; m.fillText(r.n, x, y + 4); });
+          $o('#eh-next').onclick = () => done(res);
+        }
+      }
+    }
+
+    /* ---- STREFA SPOKOJU (przy wysokim stresie) ---- */
+    function rateStress(box, label, cb) {
+      box.innerHTML = `<div class="ac-q txt">${label}</div><div class="ac-opts" style="grid-template-columns:repeat(5,1fr)">${[1, 2, 3, 4, 5].map(n => `<button class="ac-btn" data-n="${n}">${n}</button>`).join('')}</div><div class="ac-note" style="text-align:center;margin-top:8px">1 = spokój · 5 = bardzo duży stres</div>`;
+      box.querySelectorAll('.ac-btn').forEach(b => b.onclick = () => cb(+b.dataset.n));
+    }
+    function stageBreath(box, opts, done) {
+      const PH = [['Wdech', 4, 1], ['Zatrzymaj', 4, 1], ['Wydech', 4, .45], ['Zatrzymaj', 4, .45]], CYC = 4, before = M.curStress; let cyc = 0, ph = 0, left = 0;
+      box.innerHTML = `<div class="ac-note" style="text-align:center">Stres przed ćwiczeniem: <b>${before}/5</b></div>
+        <div class="ac-breath"><div class="ac-bcircle" id="ac-bc"></div><div class="ac-btxt" id="ac-bt">Gotowy?</div></div>
+        <div class="ac-row" style="justify-content:center"><button class="ac-btn pri" id="ac-bgo">Zaczynam</button><button class="ac-btn ghost" id="ac-bskip">Pomiń</button></div>`;
+      const circ = $('#ac-bc', box), txt = $('#ac-bt', box);
+      $('#ac-bskip', box).onclick = () => done({ calm: true, type: 'oddech', stressBefore: before, stressAfter: before, skipped: true, score: 0 });
+      $('#ac-bgo', box).onclick = () => {
+        $('#ac-bgo', box).remove(); $('#ac-bskip', box).remove(); sfx('go');
+        const step = () => {
+          if (cyc >= CYC) { txt.textContent = 'Dobrze!'; return later(() => rateStress(box, 'Jak się teraz czujesz? Oceń swój stres:', n => done({ calm: true, type: 'oddech', stressBefore: before, stressAfter: n, score: 0 })), 900); }
+          const [name, secs, scale] = PH[ph]; left = secs;
+          circ.style.transition = `transform ${secs}s ease-in-out`; circ.style.transform = `scale(${scale})`;
+          const tick = () => {
+            txt.innerHTML = `${name}<br><small>${left}</small>`;
+            if (left > 1) { left--; later(tick, 1000); } else later(() => { ph = (ph + 1) % 4; if (ph === 0) cyc++; step(); }, 1000);
+          };
+          tick();
+        };
+        step();
+      };
+    }
+    function stageGround(box, opts, done) {
+      const before = M.curStress, STEPS = [[5, 'rzeczy, które widzisz'], [4, 'rzeczy, których możesz dotknąć'], [3, 'dźwięki, które słyszysz'], [2, 'zapachy, które czujesz'], [1, 'rzecz, za którą jesteś dziś wdzięczny/a']]; let i = 0;
+      const step = () => {
+        if (i >= STEPS.length) return rateStress(box, 'Jak się teraz czujesz? Oceń swój stres:', n => done({ calm: true, type: 'uziemienie', stressBefore: before, stressAfter: n, score: 0 }));
+        const [n, t] = STEPS[i];
+        box.innerHTML = `<div class="ac-prog"><i style="width:${i / STEPS.length * 100}%"></i></div><div class="ac-note" style="text-align:center">Stres przed ćwiczeniem: <b>${before}/5</b></div>
+          <div class="ac-q" style="margin:26px 0">Wskaż ${n} ${t}.</div><div class="ac-note" style="text-align:center">Nazwij je w myślach lub na głos, powoli.</div>
+          <div class="ac-row" style="justify-content:center;margin-top:16px"><button class="ac-btn pri" id="ac-gn">Gotowe →</button><button class="ac-btn ghost" id="ac-gs">Pomiń</button></div>`;
+        $('#ac-gn', box).onclick = () => { i++; sfx('ok'); step(); };
+        $('#ac-gs', box).onclick = () => done({ calm: true, type: 'uziemienie', stressBefore: before, stressAfter: before, skipped: true, score: 0 });
+      };
+      step();
+    }
+    function calmDone(key, res) {
+      const p = profile(M.user), s = stageByKey[key], tag = 'calm:' + res.type, first = !paidToday(p, tag);
+      const earn = res.skipped ? 0 : first ? 40 : 10; if (!res.skipped) markPaid(p, tag);
+      p.credits += earn; M.earned += earn;
+      M.calmLog.push({ type: res.type, stressBefore: res.stressBefore, stressAfter: res.stressAfter, skipped: !!res.skipped }); M.curStress = res.stressAfter;
+      DB.calmLogs = DB.calmLogs || []; DB.calmLogs.push({ ts: Date.now(), astronaut: M.user, type: res.type, stressBefore: res.stressBefore, stressAfter: res.stressAfter, skipped: !!res.skipped });
+      saveDB(); updateHeader(); sfx('win');
+      const d = res.stressBefore - res.stressAfter, more = !res.skipped && res.type === 'oddech' && res.stressAfter >= 4;
+      const msg = res.skipped ? 'Ćwiczenie pominięte.' : d > 0 ? `Stres: ${res.stressBefore} → ${res.stressAfter} (−${d}) 🎉` : d === 0 ? `Stres bez zmian (${res.stressAfter}/5).` : `Stres wzrósł (${res.stressBefore} → ${res.stressAfter}). Rozważ rozmowę z lekarzem lub psychologiem pokładowym.`;
+      setBody(`${hud(null)}<div class="ac-card" style="text-align:center"><div class="ac-note">${ttl(key)} · ZAKOŃCZONO</div><div class="ac-big" style="font-size:1.5rem">${msg}</div>
+        ${more ? '<p class="ac-note">Stres nadal jest wysoki: polecamy jeszcze krótkie ćwiczenie uziemiające.</p>' : ''}
+        <p class="ac-note">${earn ? `+${earn} 💰${first ? '' : ' (powtórka)'}` : ''}</p>
+        <div class="ac-row" style="justify-content:center">${more ? '<button class="ac-btn pri" id="ac-cg">🌿 5-4-3-2-1</button>' : ''}<button class="ac-btn ${more ? '' : 'pri'}" id="ac-mp">🌙 Wróć na księżyc</button></div></div>`);
+      const cg = $('#ac-cg', root); if (cg) cg.onclick = () => viewIntro('calm_ground');
+      $('#ac-mp', root).onclick = () => viewPlanet('calm');
+    }
+
+    /* ---- 2. COORDINATION ---- */
+    function stageCoord(box, opts, done) {
+      const L = opts.lvl || 1, CP = LV.coordination, N = CP.n[L - 1], SZ = CP.size[L - 1], LIM = CP.limit[L - 1], R = SZ / 2;
+      let shown = 0, handled = 0, misses = 0, hits = 0, tShown = 0, tg = null, tmo = null, over = false; const times = [], offs = [];
+      box.innerHTML = `<div class="ac-prog"><i id="ac-p"></i></div><div class="ac-stage" id="ac-s"></div>`;
+      const st = $('#ac-s', box), p = $('#ac-p', box);
+      function next() {
+        clearTimeout(tmo); if (tg) { tg.remove(); tg = null; }
+        if (shown >= N) return finishAll();
+        shown++; tg = document.createElement('div'); tg.className = 'ac-target';
+        tg.style.width = tg.style.height = SZ + 'px';
+        const pad = SZ / 2 + 10; tg.style.left = rnd(pad, Math.max(pad, st.clientWidth - pad)) + 'px'; tg.style.top = rnd(pad, Math.max(pad, st.clientHeight - pad)) + 'px';
+        st.appendChild(tg); tShown = now();
+        if (LIM) { tmo = setTimeout(() => { misses++; handled++; p.style.width = handled / N * 100 + '%'; sfx('bad'); next(); }, LIM); cleanups.push(() => clearTimeout(tmo)); }
+      }
+      function finishAll() {
+        over = true; const avgT = hits ? Math.round(mean(times)) : 1800, avgO = hits ? Math.round(mean(offs) * 10) / 10 : R;
+        st.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font:700 1.2rem Orbitron">Śr. czas ${hits ? avgT + ' ms' : '—'}<br>Pudła: ${misses}</div>`;
+        const res = { avgTime: avgT, avgOffset: avgO, hits, misses, score: scoreCoord(avgT, avgO, misses, hits, R) }; later(() => done(res), 1200);
+      }
+      listen(st, 'pointerdown', e => {
+        if (!tg || over) return; const r = tg.getBoundingClientRect(), d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+        if (d <= R) { hits++; handled++; times.push(now() - tShown); offs.push(d); p.style.width = handled / N * 100 + '%'; sfx('ok'); next(); }
+        else { misses++; sfx('bad'); }
+      });
+      later(next, 500);
+    }
+
+    /* ---- 3. CHIMP TEST ---- */
+    function stageChimp(box, opts, done) {
+      const L = opts.lvl || 1, COLS = 5, ROWS = 4, baseLives = LV.chimp.lives[L - 1], start = LV.chimp.start[L - 1];
+      let lives = baseLives + (opts.life ? 1 : 0), level = start, maxLevel = start - 1, strikes = 0, finished = false; const firstTaps = [];
+      function finish() {
+        if (finished) return; finished = true;
+        const res = { maxLevel, strikes, avgFirstTap: Math.round(mean(firstTaps)), score: scoreChimp(maxLevel), used: { life: opts.life && strikes >= baseLives ? 1 : 0 } };
+        box.innerHTML = `<div style="text-align:center;padding:30px" class="ac-q">Najwyższy poziom: ${maxLevel} cyfr</div>`; later(() => done(res), 1300);
+      }
+      function round() {
+        const cells = shuffle([...Array(COLS * ROWS).keys()]).slice(0, level), num = {}; cells.forEach((c, i) => num[c] = i + 1);
+        let next = 1; const shownAt = now();
+        box.innerHTML = `<div class="ac-chimp-hdr"><span>Cyfry: <b>${level}</b></span><span>Życia: <b>${'❤'.repeat(lives)}</b></span></div>
+          <div class="ac-chimp" style="grid-template-columns:repeat(${COLS},1fr)">${[...Array(COLS * ROWS).keys()].map(c => num[c] ? `<button class="ac-cell" data-c="${c}">${num[c]}</button>` : `<div class="ac-cell off"></div>`).join('')}</div>`;
+        const btns = [...box.querySelectorAll('button.ac-cell')];
+        btns.forEach(b => b.onclick = () => {
+          const n = num[+b.dataset.c];
+          if (n !== next) {
+            lives--; strikes++; sfx('bad'); btns.forEach(x => { x.classList.remove('mask'); x.disabled = true; });
+            if (lives <= 0) later(finish, 900); else later(round, 1000); return;
+          }
+          if (n === 1) { firstTaps.push(now() - shownAt); btns.forEach(x => x.classList.add('mask')); }
+          b.classList.add('gone'); b.disabled = true; next++; sfx('ok');
+          if (next > level) { maxLevel = Math.max(maxLevel, level); level++; if (level > 12) later(finish, 400); else later(round, 600); }
+        });
+      }
+      round();
+    }
+
+    /* ---- 4. FLAPPY ROCKET ---- */
+    function stageFlappy(box, opts, done) {
+      const L = opts.lvl || 1, FP = LV.flappy, GOAL = FP.goal[L - 1], W = 360, H = 480, RX = 90, pr = profile(M.user), skin = pr.skin, trail = pr.trail;
+      box.innerHTML = `<div class="ac-note" style="text-align:center;margin-bottom:8px">Dotknij / kliknij / spacja = silnik. Omijaj asteroidy!</div><canvas id="ac-fl" class="ac-flcanvas" width="${W}" height="${H}"></canvas>`;
+      const cv = $('#ac-fl', box), c = cv.getContext('2d');
+      let attempt = 0, best = 0, flaps = 0, dur = 0, shield = opts.shield ? 1 : 0, usedShield = 0, g, raf = 0, last = 0, ended = false;
+      const slow = !!opts.slowmo, speed = FP.speed[L - 1] * (slow ? .68 : 1);
+      const bgStars = Array.from({ length: 50 }, () => ({ x: rnd(0, W), y: rnd(0, H), z: Math.random() * 1.6 + .3 }));
+      function reset() { attempt++; g = { y: H / 2, vy: 0, obs: [], gates: 0, started: false, over: false, t: 0, parts: [], inv: 0, flaps: 0 }; }
+      function spawn(x) {
+        const gap = FP.gap[L - 1], gc = rnd(120, H - 120), top = gc - gap / 2, bot = gc + gap / 2, circles = [];
+        const mk = (y, r) => ({ dx: rnd(-5, 5), y, r, cr: [{ a: Math.random() * 6, d: r * .4, s: r * .22 }, { a: Math.random() * 6, d: r * .5, s: r * .16 }] });
+        for (let y = top; y > -40;) { const r = rnd(20, 27); circles.push(mk(y - r * .75, r)); y -= r * 1.35; }
+        for (let y = bot; y < H + 40;) { const r = rnd(20, 27); circles.push(mk(y + r * .75, r)); y += r * 1.35; }
+        g.obs.push({ x, gc, circles, counted: false });
+      }
+      function flap() {
+        if (ended || g.over) return; g.started = true; g.vy = -6.4; g.flaps++; sfx('flap');
+      }
+      function crash(win) {
+        g.over = true; best = Math.max(best, g.gates); flaps += g.flaps; dur += g.t / 60;
+        for (let i = 0; i < 26; i++) g.parts.push({ x: RX, y: g.y, vx: (Math.random() - .5) * 6, vy: (Math.random() - .5) * 6, life: 1, kind: 'boom' });
+        sfx(win ? 'win' : 'bad');
+        if (win || attempt >= 2) later(finish, 1000); else later(reset, 1100);
+      }
+      function finish() {
+        if (ended) return; ended = true; cancelAnimationFrame(raf);
+        done({ gates: best, attempts: attempt, flaps, duration: Math.round(dur * 10) / 10, score: scoreFlappy(best, GOAL), used: { shield: usedShield, slowmo: slow ? 1 : 0 } });
+      }
+      function hit() {
+        if (shield > 0) {
+          shield--; usedShield = 1; g.inv = 100; g.vy = -3; sfx('shield');
+          const nx = g.obs.find(o => o.x + 40 > RX - 30); g.y = nx ? nx.gc : H / 2; return;
+        }
+        crash(false);
+      }
+      function update(dt) {
+        g.t += dt; bgStars.forEach(s => { s.x -= s.z * .4 * dt; if (s.x < 0) { s.x = W; s.y = rnd(0, H); } });
+        g.parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= .03 * dt; }); g.parts = g.parts.filter(p => p.life > 0);
+        if (!g.started) { g.y = H / 2 + Math.sin(g.t / 12) * 8; return; }
+        if (g.over) return;
+        g.vy = Math.min(g.vy + .38 * dt, 9); g.y += g.vy * dt;
+        if (!g.obs.length || g.obs[g.obs.length - 1].x < W - 200) spawn(g.obs.length ? W + 20 : W + 90);
+        g.obs.forEach(o => o.x -= speed * dt); g.obs = g.obs.filter(o => o.x > -70);
+        g.obs.forEach(o => { if (!o.counted && o.x < RX - 30) { o.counted = true; g.gates++; sfx('ok'); if (g.gates >= GOAL) { crash(true); } } });
+        if (g.over) return;
+        if (g.inv > 0) g.inv -= dt;
+        else {
+          if (g.y < 12 || g.y > H - 12) return hit();
+          for (const o of g.obs) { if (Math.abs(o.x - RX) > 80) continue; for (const k of o.circles) { const dx = o.x + k.dx; if (Math.hypot(RX - dx, g.y - k.y) < k.r + 9 || Math.hypot(RX + 12 - dx, g.y - k.y) < k.r + 4) return hit(); } }
+        }
+        const hue = (g.t * 8) % 360;
+        g.parts.push({ x: RX - 20, y: g.y + (Math.random() - .5) * 6, vx: -1.6 - Math.random(), vy: (Math.random() - .5) * .8, life: 1, kind: trail, hue });
+      }
+      function draw() {
+        const bg = c.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0a0f2c'); bg.addColorStop(1, '#1a1040'); c.fillStyle = bg; c.fillRect(0, 0, W, H);
+        bgStars.forEach(s => { c.fillStyle = 'rgba(255,255,255,' + (.3 + s.z / 3) + ')'; c.fillRect(s.x, s.y, s.z, s.z); });
+        g.obs.forEach(o => o.circles.forEach(k => {
+          const x = o.x + k.dx, gr = c.createRadialGradient(x - k.r * .3, k.y - k.r * .3, 2, x, k.y, k.r); gr.addColorStop(0, '#9ca3af'); gr.addColorStop(1, '#4b5563');
+          c.fillStyle = gr; c.beginPath(); c.arc(x, k.y, k.r, 0, 7); c.fill(); c.strokeStyle = '#374151'; c.lineWidth = 1.5; c.stroke();
+          c.fillStyle = 'rgba(55,65,81,.7)'; k.cr.forEach(q => { c.beginPath(); c.arc(x + Math.cos(q.a) * q.d, k.y + Math.sin(q.a) * q.d, q.s, 0, 7); c.fill(); });
+        }));
+        g.parts.forEach(p => {
+          c.globalAlpha = clamp(p.life, 0, 1);
+          if (p.kind === 'boom') { c.fillStyle = '#fb923c'; c.beginPath(); c.arc(p.x, p.y, 4 * p.life + 1, 0, 7); c.fill(); }
+          else if (p.kind === 'rainbow') { c.fillStyle = `hsl(${p.hue},100%,60%)`; c.beginPath(); c.arc(p.x, p.y, 4 * p.life + 1, 0, 7); c.fill(); }
+          else if (p.kind === 'stardust') { c.fillStyle = '#e0f2fe'; c.fillRect(p.x, p.y, 2.5, 2.5); }
+          else { c.fillStyle = p.life > .5 ? '#fde68a' : '#fb923c'; c.beginPath(); c.arc(p.x, p.y, 4 * p.life + 1, 0, 7); c.fill(); }
+        }); c.globalAlpha = 1;
+        if (!g.over) {
+          if (!(g.inv > 0 && Math.floor(g.t / 4) % 2)) drawShip(c, RX, g.y, clamp(g.vy * .06, -.5, .8), skin);
+          if (shield > 0 || g.inv > 0) { c.strokeStyle = 'rgba(56,189,248,.8)'; c.lineWidth = 2; c.beginPath(); c.arc(RX, g.y, 22, 0, 7); c.stroke(); }
+        }
+        c.fillStyle = '#fff'; c.font = '700 16px Orbitron,sans-serif'; c.textAlign = 'left'; c.fillText(`Bramy ${g.gates}/${GOAL}`, 12, 26);
+        c.textAlign = 'right'; c.font = '12px "Exo 2",sans-serif'; c.fillStyle = '#97a3d6'; c.fillText(`Próba ${attempt}/2 · najlepsza ${Math.max(best, g.gates)}`, W - 12, 24);
+        if (!g.started && !g.over) { c.textAlign = 'center'; c.fillStyle = '#e8ecff'; c.font = '600 15px "Exo 2",sans-serif'; c.fillText('Dotknij, aby odpalić silnik', W / 2, H - 40); }
+        if (g.over) { c.textAlign = 'center'; c.fillStyle = '#fff'; c.font = '700 20px Orbitron'; c.fillText(g.gates >= GOAL ? 'UCIECZKA!' : 'ZDERZENIE!', W / 2, H / 2); }
+      }
+      function frame(ts) { raf = requestAnimationFrame(frame); const dt = clamp((ts - last) / 16.67, .3, 2.5); last = ts; update(dt); draw(); }
+      listen(cv, 'pointerdown', e => { e.preventDefault(); flap(); });
+      listen(document, 'keydown', e => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); flap(); } });
+      cleanups.push(() => cancelAnimationFrame(raf));
+      reset(); last = performance.now(); raf = requestAnimationFrame(frame);
+    }
+
+    /* ---- 5. LOGIC / RIDDLES ---- */
+    function stageLogic(box, opts, done) {
+      const L = opts.lvl || 1, qs = buildLogicSet(L), N = qs.length, pr = profile(M.user); let i = 0, correct = 0, hints = 0, t0 = 0; const times = [];
+      function next() {
+        if (i >= N) {
+          const avg = Math.round(mean(times) * 10) / 10;
+          return done({ correct, total: N, avgTime: avg, hints, score: scoreLogic(correct, N, avg, LV.logic.tref[L - 1]), used: { hint: hints } });
+        }
+        const q = qs[i]; t0 = now(); let hintUsed = false;
+        const left = () => pr.inv.hint - hints;
+        box.innerHTML = `<div class="ac-prog"><i style="width:${i / N * 100}%"></i></div><div style="text-align:center"><span class="ac-tag">${q.tag} · ${i + 1}/${N}</span></div>
+          <div class="ac-q ${q.big ? '' : 'txt'}">${esc(q.q)}</div>
+          <div class="ac-opts">${q.opts.map((o, k) => `<button class="ac-btn" data-k="${k}">${esc(o)}</button>`).join('')}</div>
+          <div style="text-align:center;margin-top:12px"><button class="ac-btn ghost" id="ac-hint" ${left() > 0 ? '' : 'disabled'}>💡 Podpowiedź (${left()})</button></div>`;
+        const btns = [...box.querySelectorAll('.ac-opts .ac-btn')];
+        btns.forEach(b => b.onclick = () => {
+          times.push((now() - t0) / 1000); const ok = q.opts[+b.dataset.k] === q.ans; if (ok) { correct++; sfx('ok'); } else sfx('bad');
+          b.style.borderColor = ok ? 'var(--ok)' : 'var(--bad)'; btns.forEach(x => x.disabled = true);
+          later(() => { i++; next(); }, 450);
+        });
+        $('#ac-hint', box).onclick = () => {
+          if (hintUsed || left() <= 0) return; hintUsed = true; hints++; sfx('buy');
+          shuffle(btns.filter(b => q.opts[+b.dataset.k] !== q.ans)).slice(0, 2).forEach(b => b.classList.add('dim')); $('#ac-hint', box).disabled = true;
+        };
+      }
+      next();
+    }
+
+    /* ---- FINALE ---- */
+    function viewFinale() {
+      const r = M.results, p = profile(M.user);
+      if (!DOMAINS.every(([k]) => r[k]) || sessionToday(M.user)) return viewMap();
+      const composite = Math.round(mean(DOMAINS.map(([k]) => r[k].score))), boosts = DOMAINS.reduce((n, [k]) => n + (r[k].boostN || 0), 0);
+      const s = { id: 's' + Date.now(), ts: Date.now(), astronaut: M.user, checkin: M.checkin, reaction: r.reaction, coordination: r.coordination, chimp: r.chimp, flappy: r.flappy, logic: r.logic, eye: r.eye, boostsUsed: boosts, composite, earned: M.earned, calm: M.calmLog, context: M.ctx, version: 2 };
+      addSession(s);
+      const rkMe = getRanking().find(x => x.astronaut === M.user), finalDuck = rkMe ? rkMe.duck : duckFor(composite, null, 0);
+      p.credits += 50; const bonus = [];
+      ACH.forEach(a => { if (!p.ach.includes(a.id) && a.test(s, M.user)) { p.ach.push(a.id); p.credits += a.reward; bonus.push(a); } });
+      saveDB(); updateHeader(); sfx('win');
+      setBody(`${hud(null)}<div class="ac-launch">🚀</div><div class="ac-card" style="text-align:center"><div class="ac-note">KOD UCIECZKI: <b style="font:700 1.2rem Orbitron;letter-spacing:.2em">${M.code.join(' ')}</b> · ZATWIERDZONO</div>
+        <div class="ac-note" style="margin-top:6px">${esc(s.astronaut)} · uciekł(a) ze stacji Aurora-7!</div><div class="ac-duckrow">${duckImg(finalDuck, 140, 'Twoja kaczka dnia')}</div><div class="ac-note"><b>${duckLabel(finalDuck)}</b></div><div class="ac-big">${composite}/100</div><div class="ac-note">Test dnia zapisany w rankingu ✔ · +50 💰 za ukończenie</div></div>
+        <div class="ac-grid" style="margin-bottom:14px">
+          <div class="ac-kpi"><span>Reakcja (mediana)</span><b>${r.reaction.median} ms</b><span>${r.reaction.score}/100</span></div>
+          <div class="ac-kpi"><span>Koordynacja</span><b>${r.coordination.avgTime} ms</b><span>${r.coordination.score}/100 · pudła ${r.coordination.misses}</span></div>
+          <div class="ac-kpi"><span>Pamięć (szympans)</span><b>${r.chimp.maxLevel} cyfr</b><span>${r.chimp.score}/100</span></div>
+          <div class="ac-kpi"><span>Pilotaż</span><b>${r.flappy.gates}/15 bram</b><span>${r.flappy.score}/100</span></div>
+          <div class="ac-kpi"><span>Logika</span><b>${r.logic.correct}/${r.logic.total}</b><span>${r.logic.score}/100</span></div>
+          <div class="ac-kpi"><span>Wzrok (eye tracking)</span><b>${r.eye.hits}/${r.eye.total} celów</b><span>${r.eye.score}/100 · śr. ${r.eye.avgReaction} ms</span></div></div>
+        ${M.calmLog.length ? `<div class="ac-card"><h3>🧘 STREFA SPOKOJU</h3>${M.calmLog.map(c => `<div>${c.type}: ${c.skipped ? 'pominięto' : `stres ${c.stressBefore} → ${c.stressAfter}`}</div>`).join('')}</div>` : ''}
+        <div class="ac-card"><h3>PROFIL POZNAWCZY</h3><canvas id="ac-rd" class="ac-cv" width="320" height="280"></canvas></div>
+        <div class="ac-row"><button class="ac-btn pri" id="ac-rk">🏆 Ranking</button><button class="ac-btn" id="ac-sh">🛒 Sklep</button><button class="ac-btn" id="ac-mp">🚀 Wróć w kosmos</button><button class="ac-btn ghost" id="ac-nw">Nowa misja</button></div>`);
+      drawRadar($('#ac-rd', root), DOMAINS.map(d => d[1]), DOMAINS.map(([k]) => r[k].score), accent());
+      bonus.forEach((a, k) => setTimeout(() => toast(`${a.icon} Odznaka: ${a.name} (+${a.reward} 💰)`), 800 + k * 900));
+      $('#ac-rk', root).onclick = () => go('rank'); $('#ac-sh', root).onclick = () => go('shop'); $('#ac-mp', root).onclick = viewMap; $('#ac-nw', root).onclick = () => { M = null; go('mission'); };
+    }
+
+    /* ================= RANKING ================= */
+    function duckWhy(r) {
+      if (r.alert) return 'Spadek formy ≥15% względem bazy: kaczka ostrzega.';
+      if (r.warn) return 'Lekki spadek formy względem bazy: kaczka jest obrażona.';
+      if (r.duck === 'kosmita') return 'Co najmniej 7 dni z rzędu: regularność godna kosmity.';
+      const t = DUCK_TIERS.find(x => x[1] === r.duck); return t ? t[2] : '';
+    }
+    function viewRank() {
+      const rk = getRanking();
+      if (!rk.length) return setBody(`<div class="ac-card">Brak wyników. Ukończ pierwszą misję!</div>`);
+      if (!selRank || !rk.find(r => r.astronaut === selRank)) selRank = (rk.find(r => r.astronaut === user) || rk[0]).astronaut;
+      const sel = rk.find(r => r.astronaut === selRank), rd = readiness(sel);
+      setBody(`<div class="ac-card"><h3>🏆 RANKING ZAŁOGI</h3><table class="ac-table"><thead><tr><th>#</th><th></th><th>Astronauta</th><th>Wynik*</th><th>Reakc.</th><th>Koord.</th><th>Pamięć</th><th>Pilot.</th><th>Logika</th><th>Wzrok</th><th>Sesji</th><th>Trend</th></tr></thead><tbody>
+        ${rk.map((r, i) => `<tr data-n="${esc(r.astronaut)}" class="${r.astronaut === selRank ? 'sel' : ''}"><td>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td><td>${duckImg(r.duck, 34)}</td><td>${esc(r.astronaut)}</td><td><b>${r.recentAvg}</b></td><td>${r.reaction}</td><td>${r.coordination}</td><td>${r.chimp}</td><td>${r.flappy}</td><td>${r.logic}</td><td>${r.eye}</td><td>${r.sessions}</td>
+        <td>${r.deltaPct === null ? '<span class="ac-note">—</span>' : r.alert ? `<span class="ac-flag">⚠ ${r.deltaPct}%</span>` : `<span class="${r.deltaPct >= 0 ? 'ac-good' : 'ac-bad'}">${r.deltaPct > 0 ? '+' : ''}${r.deltaPct}%</span>`}</td></tr>`).join('')}</tbody></table>
+        <div class="ac-note" style="margin-top:8px">*Średnia z 3 ostatnich sesji. Trend = zmiana względem własnej bazy (pierwsze 3 sesje). Kliknij wiersz, aby zobaczyć szczegóły.</div></div>
+        <div class="ac-card"><h3>📊 ${esc(sel.astronaut)} · SZCZEGÓŁY</h3><div class="ac-duckrow">${duckImg(sel.duck, 120)}<div><b>${duckLabel(sel.duck)}</b><div class="ac-note">${duckWhy(sel)}</div></div></div><p class="${rd[1]}">${rd[0]}</p>
+        <div class="ac-row" style="align-items:flex-start"><div style="flex:1;min-width:260px"><canvas id="ac-rd" class="ac-cv" width="320" height="280"></canvas></div>
+        <div style="flex:1;min-width:260px"><div class="ac-note">Wynik całkowity w czasie</div><canvas id="ac-ln" class="ac-cv" width="320" height="160"></canvas></div></div></div>`);
+      root.querySelectorAll('.ac-table tbody tr').forEach(tr => tr.onclick = () => { selRank = tr.dataset.n; viewRank(); });
+      drawRadar($('#ac-rd', root), DOMAINS.map(d => d[1]), DOMAINS.map(([k]) => sel[k]), accent()); drawLine($('#ac-ln', root), sel.trend, accent());
+    }
+
+    /* ================= SHOP ================= */
+    function viewShop() {
+      if (!user) return needUser(); const p = profile(user);
+      const sec = (title, type) => `<div class="ac-card"><h3>${title}</h3><div class="ac-shop">${SHOP.filter(x => x.type === type).map(it => {
+        const owned = p.owned.includes(it.id), eq = it.type !== 'item' && p[it.type] === it.id.split(':')[1];
+        return `<div class="ac-item ${eq ? 'eq' : ''}"><div class="ic">${it.icon}</div><div class="nm">${it.name}</div><div class="ds">${it.desc}${it.type === 'item' ? `<br><b>Masz: ${p.inv[it.key] || 0}</b>` : ''}</div>
+          <button class="ac-btn ${owned && !eq ? '' : 'pri'}" data-id="${it.id}" ${eq ? 'disabled' : ''}>${it.type === 'item' ? `Kup · ${it.price} 💰` : eq ? 'Założone ✔' : owned ? 'Załóż' : `Kup · ${it.price} 💰`}</button></div>`;
+      }).join('')}</div></div>`;
+      setBody(`<div class="ac-card"><b>Masz ${p.credits} 💰</b><div class="ac-note">Kredyty zdobywasz za wyniki w pokojach, ukończenie misji i odznaki. Ulepszenia mają wpływ na punktację, kosmetyka nie.</div></div>
+        ${sec('🧰 ULEPSZENIA', 'item')}${sec('🚀 STATKI', 'skin')}${sec('✨ SMUGI', 'trail')}${sec('🎨 MOTYWY INTERFEJSU', 'theme')}`);
+      root.querySelectorAll('.ac-item button').forEach(b => b.onclick = () => {
+        const it = SHOP.find(x => x.id === b.dataset.id);
+        if (it.type === 'item') { if (p.credits < it.price) return toast('Za mało kredytów 💰'); p.credits -= it.price; p.inv[it.key] = (p.inv[it.key] || 0) + 1; sfx('buy'); }
+        else if (!p.owned.includes(it.id)) { if (p.credits < it.price) return toast('Za mało kredytów 💰'); p.credits -= it.price; p.owned.push(it.id); p[it.type] = it.id.split(':')[1]; sfx('buy'); }
+        else { p[it.type] = it.id.split(':')[1]; sfx('ok'); }
+        saveDB(); updateHeader(); viewShop();
+      });
+    }
+
+    /* ================= NAGRODY (astronauta) ================= */
+    const stLabel = { pending: '⏳ Oczekuje na realizację', delivered: '✔ Zrealizowane', cancelled: '✖ Anulowane (zwrot kredytów)' };
+    const fmtD = ts => new Date(ts).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' });
+    function viewRewards() {
+      if (!user) return needUser(); const p = profile(user), rw = getRewards(), mine = DB.orders.filter(o => o.astronaut === user).slice().reverse();
+      const pend = mine.filter(o => o.status === 'pending').length;
+      setBody(`<div class="ac-card"><b>Masz ${p.credits} 💰</b><div class="ac-note">Wymień kredyty na prawdziwe nagrody. Zamówienie trafia do koordynatora, który je przekaże. Kody cyfrowe pojawią się tutaj po realizacji. Oczekujących zamówień możesz mieć maks. ${MAX_PENDING} (masz ${pend}).</div></div>
+        <div class="ac-card"><h3>🎁 NAGRODY</h3><div class="ac-shop">${rw.map(r => {
+          const out = r.stock !== null && r.stock <= 0, poor = p.credits < r.price;
+          return `<div class="ac-item"><div class="ic">${esc(r.icon)}</div><div class="nm">${esc(r.name)}</div><div class="ds">${r.type === 'code' ? 'Kod cyfrowy: dostaniesz go po realizacji.' : 'Rzecz fizyczna: odbierzesz od koordynatora.'}${r.stock !== null ? `<br><b>Zostało: ${r.stock}</b>` : ''}</div>
+          <button class="ac-btn pri" data-r="${esc(r.id)}" ${out ? 'disabled' : ''}>${out ? 'Brak na stanie' : `Zamów · ${r.price} 💰`}${!out && poor ? ' 🔒' : ''}</button></div>`; }).join('') || '<div class="ac-note">Brak nagród w katalogu.</div>'}</div></div>
+        <div class="ac-card"><h3>📜 MOJE ZAMÓWIENIA</h3>${mine.map(o => `<div class="ac-ord"><div class="ic">${esc(o.icon)}</div><div class="mid"><b>${esc(o.name)}</b> · ${o.price} 💰<div class="ac-note">${esc(o.id)} · ${fmtD(o.ts)}</div>
+          ${o.status === 'delivered' && o.code ? `<div>Kod: <span class="ac-vcode">${esc(o.code)}</span></div>` : ''}</div>
+          <span class="ac-st ${o.status}">${stLabel[o.status]}</span>${o.status === 'pending' ? `<button class="ac-btn ghost" data-c="${esc(o.id)}">Anuluj</button>` : ''}</div>`).join('') || '<div class="ac-note">Jeszcze nic nie zamawiałeś/aś.</div>'}</div>`);
+      root.querySelectorAll('.ac-item button[data-r]').forEach(b => b.onclick = () => {
+        const r = rw.find(x => x.id === b.dataset.r);
+        if (!confirm(`Zamówić: ${r.name} za ${r.price} kredytów?`)) return;
+        const res = placeOrder(user, r.id); if (!res.ok) return toast(res.msg);
+        sfx('buy'); updateHeader(); toast(`${r.icon} Zamówiono! Numer: ${res.order.id}`); viewRewards();
+      });
+      root.querySelectorAll('button[data-c]').forEach(b => b.onclick = () => { if (confirm('Anulować zamówienie? Kredyty wrócą na konto.')) { cancelOrder(b.dataset.c); sfx('ok'); updateHeader(); viewRewards(); } });
+    }
+
+    /* ================= PANEL KOORDYNATORA (PIN) ================= */
+    let coordOK = false;
+    function viewCoord() {
+      if (!coordOK) {
+        setBody(`<div class="ac-card"><h3>📦 PANEL KOORDYNATORA</h3><div class="ac-note" style="margin-bottom:10px">Tylko dla osoby realizującej nagrody. Podaj PIN${DB.coordPin ? '' : ' (domyślny: 7777: zmień go po wejściu)'}.</div>
+          <div class="ac-row"><label class="ac-field sm">PIN<input id="ac-pin" type="password" inputmode="numeric" autocomplete="off"></label><button class="ac-btn pri" id="ac-pinok">Wejdź</button></div></div>`);
+        const go1 = () => { if ($('#ac-pin', root).value === coordPin()) { coordOK = true; viewCoord(); } else { toast('Zły PIN'); sfx('bad'); } };
+        $('#ac-pinok', root).onclick = go1; $('#ac-pin', root).onkeydown = e => { if (e.key === 'Enter') go1(); };
+        return;
+      }
+      const all = DB.orders.slice().reverse(), pend = all.filter(o => o.status === 'pending'), hist = all.filter(o => o.status !== 'pending').slice(0, 20), rw = getRewards();
+      setBody(`<div class="ac-card"><h3>⏳ DO REALIZACJI (${pend.length})</h3>${pend.map(o => `<div class="ac-ord"><div class="ic">${esc(o.icon)}</div><div class="mid"><b>${esc(o.name)}</b> · ${esc(o.astronaut)}<div class="ac-note">${esc(o.id)} · ${fmtD(o.ts)} · ${o.price} 💰</div></div>
+          ${o.type === 'code' ? `<label class="ac-field sm" style="flex:1">Kod do przekazania<input data-code="${esc(o.id)}" placeholder="wklej kod"></label>` : ''}
+          <button class="ac-btn pri" data-ok="${esc(o.id)}">Zrealizowane</button><button class="ac-btn ghost" data-no="${esc(o.id)}">Anuluj + zwrot</button></div>`).join('') || '<div class="ac-note">Brak oczekujących zamówień.</div>'}</div>
+        <div class="ac-card"><h3>🗂 HISTORIA</h3><table class="ac-table"><thead><tr><th>Data</th><th>Astronauta</th><th>Nagroda</th><th>Status</th></tr></thead><tbody>${hist.map(o => `<tr style="cursor:default"><td>${fmtD(o.ts)}</td><td>${esc(o.astronaut)}</td><td>${esc(o.icon)} ${esc(o.name)}</td><td><span class="ac-st ${o.status}">${o.status === 'delivered' ? 'zrealizowane' : 'anulowane'}</span></td></tr>`).join('') || '<tr><td colspan="4">Brak</td></tr>'}</tbody></table>
+          <div class="ac-row" style="margin-top:10px"><button class="ac-btn" id="ac-ocsv">Eksport zamówień CSV</button></div></div>
+        <div class="ac-card"><h3>🧾 KATALOG NAGRÓD</h3>${rw.map((r, i) => `<div class="ac-ord"><div class="ic">${esc(r.icon)}</div><div class="mid"><b>${esc(r.name)}</b> · ${r.price} 💰<div class="ac-note">${r.type === 'code' ? 'kod cyfrowy' : 'rzecz fizyczna'} · stan: ${r.stock === null ? 'bez limitu' : r.stock}</div></div>
+          <button class="ac-btn ghost" data-st="${i}">Zmień stan</button><button class="ac-btn ghost" data-del="${i}">Usuń</button></div>`).join('')}
+          <div class="ac-h" style="margin-top:14px">Dodaj nagrodę</div>
+          <div class="ac-row"><label class="ac-field sm" style="flex:0 1 70px">Ikona<input id="ac-ni" value="🎁"></label><label class="ac-field">Nazwa<input id="ac-nn" placeholder="np. Batonik"></label>
+            <label class="ac-field sm">Cena (💰)<input id="ac-np" type="number" min="0" value="100"></label>
+            <label class="ac-field sm">Typ<select id="ac-nt"><option value="phys">rzecz fizyczna</option><option value="code">kod cyfrowy</option></select></label>
+            <label class="ac-field sm">Stan<input id="ac-ns" type="number" min="0" placeholder="bez limitu"></label><button class="ac-btn pri" id="ac-nadd">Dodaj</button></div></div>
+        <div class="ac-card"><h3>🔐 USTAWIENIA</h3><div class="ac-row"><label class="ac-field sm">Nowy PIN<input id="ac-npin" type="password" inputmode="numeric" placeholder="min. 4 cyfry"></label><button class="ac-btn" id="ac-spin">Zmień PIN</button><button class="ac-btn ghost" id="ac-lock">Zablokuj panel</button></div>
+          <div class="ac-note" style="margin-top:8px">PIN chroni tylko przed przypadkowym wejściem: dane są w localStorage przeglądarki. Przy wspólnym urządzeniu astronautów warto kontrolę dostępu zrobić po stronie Twojej aplikacji.</div></div>`);
+      root.querySelectorAll('button[data-ok]').forEach(b => b.onclick = () => {
+        const o = DB.orders.find(x => x.id === b.dataset.ok), inp = root.querySelector(`input[data-code="${b.dataset.ok}"]`), code = inp ? inp.value.trim() : '';
+        if (o.type === 'code' && !code) { toast('Wpisz kod do przekazania'); inp.focus(); return; }
+        fulfilOrder(o.id, code); sfx('win'); viewCoord();
+      });
+      root.querySelectorAll('button[data-no]').forEach(b => b.onclick = () => { if (confirm('Anulować i zwrócić kredyty astronaucie?')) { cancelOrder(b.dataset.no); updateHeader(); viewCoord(); } });
+      root.querySelectorAll('button[data-st]').forEach(b => b.onclick = () => { const r = rw[+b.dataset.st], v = prompt('Nowy stan magazynowy (puste = bez limitu):', r.stock === null ? '' : r.stock); if (v === null) return; r.stock = v.trim() === '' ? null : Math.max(0, Math.round(+v) || 0); saveDB(); viewCoord(); });
+      root.querySelectorAll('button[data-del]').forEach(b => b.onclick = () => { if (confirm('Usunąć nagrodę z katalogu? (istniejące zamówienia zostają)')) { rw.splice(+b.dataset.del, 1); saveDB(); viewCoord(); } });
+      $('#ac-nadd', root).onclick = () => {
+        const name = $('#ac-nn', root).value.trim(); if (!name) return $('#ac-nn', root).focus();
+        setRewards(rw.concat([{ icon: $('#ac-ni', root).value.trim() || '🎁', name, price: +$('#ac-np', root).value || 0, type: $('#ac-nt', root).value, stock: $('#ac-ns', root).value }])); viewCoord();
+      };
+      $('#ac-ocsv', root).onclick = () => download('astro-zamowienia.csv', ordersCSV(), 'text/csv');
+      $('#ac-spin', root).onclick = () => { const v = $('#ac-npin', root).value.trim(); if (v.length < 4) return toast('PIN: min. 4 znaki'); DB.coordPin = v; saveDB(); toast('PIN zmieniony ✔'); $('#ac-npin', root).value = ''; };
+      $('#ac-lock', root).onclick = () => { coordOK = false; viewCoord(); };
+    }
+
+    /* ================= PROFILE ================= */
+    function viewProfile() {
+      if (!user) return needUser(); const p = profile(user), n = DB.sessions.filter(s => s.astronaut === user).length, myR = getRanking().find(r => r.astronaut === user), myDuck = myR ? myR.duck : null;
+      setBody(`<div class="ac-card"><h3>👨‍🚀 ${esc(user)} · ${rankTitle(n)}</h3><div class="ac-grid">
+        <div class="ac-kpi" style="display:flex;align-items:center;gap:8px">${myDuck ? duckImg(myDuck, 56) : ''}<div><span>Twoja kaczka</span><b style="font-size:.95rem">${myDuck ? duckLabel(myDuck) : '—'}</b></div></div><div class="ac-kpi"><span>Misje</span><b>${n}</b></div><div class="ac-kpi"><span>Passa (dni z rzędu)</span><b>${streak(user)} 🔥</b></div><div class="ac-kpi"><span>Kredyty</span><b>${p.credits} 💰</b></div>
+        <div class="ac-kpi"><span>Ulepszenia</span><b style="font-size:.95rem">🛡️${p.inv.shield} 🐌${p.inv.slowmo} ❤️${p.inv.life} 💡${p.inv.hint}</b></div></div></div>
+        <div class="ac-card"><h3>🏅 ODZNAKI (${p.ach.length}/${ACH.length})</h3>${ACH.map(a => `<div class="ac-badge ${p.ach.includes(a.id) ? '' : 'lock'}"><span style="font-size:1.6rem">${a.icon}</span><div><b>${a.name}</b><div class="ac-note">${a.desc} · +${a.reward} 💰</div></div></div>`).join('')}</div>
+        <div class="ac-card"><h3>🦆 KACZKI · CO OZNACZAJĄ</h3>
+          <div class="ac-leg ${myDuck === 'groznaZNozem' ? 'cur' : ''}">${duckImg('groznaZNozem', 40)}<div><b>Groźna z nożem</b><div class="ac-note">Spadek formy ≥15% względem Twojej bazy</div></div></div>
+          <div class="ac-leg ${myDuck === 'obrazona' ? 'cur' : ''}">${duckImg('obrazona', 40)}<div><b>Obrażona</b><div class="ac-note">Spadek formy o 8–15%</div></div></div>
+          <div class="ac-leg ${myDuck === 'kosmita' ? 'cur' : ''}">${duckImg('kosmita', 40)}<div><b>Kosmita</b><div class="ac-note">Passa 7+ dni z rzędu</div></div></div>
+          ${DUCK_TIERS.map(t => `<div class="ac-leg ${myDuck === t[1] ? 'cur' : ''}">${duckImg(t[1], 40)}<div><b>${duckLabel(t[1])}</b><div class="ac-note">${t[2]}</div></div></div>`).join('')}
+          <div class="ac-note">Kaczka w rankingu liczy się ze średniej 3 ostatnich sesji, a ostrzeżenia o spadku mają pierwszeństwo.</div></div>
+        <div class="ac-row"><button class="ac-btn" id="ac-out">Zmień astronautę</button></div>`);
+      $('#ac-out', root).onclick = () => { user = ''; localStorage.removeItem(LAST_KEY); M = null; go('mission'); };
+    }
+
+    /* ================= DATA ================= */
+    function viewData() {
+      const ss = DB.sessions.slice().reverse().slice(0, 15);
+      setBody(`<div class="ac-row" style="margin-bottom:12px"><button class="ac-btn" id="ac-ej">Eksport JSON</button><button class="ac-btn" id="ac-ec">Eksport CSV</button>
+        <label class="ac-btn">Import JSON<input type="file" id="ac-imp" accept="application/json" hidden></label><button class="ac-btn" id="ac-clr">Wyczyść dane</button></div>
+        <div class="ac-card"><h3>OSTATNIE SESJE</h3><table class="ac-table"><thead><tr><th>Data</th><th>Astronauta</th><th>Sen</th><th>Zmęcz.</th><th>RT</th><th>Wynik</th></tr></thead><tbody>
+        ${ss.map(s => `<tr style="cursor:default"><td>${new Date(s.ts).toLocaleString('pl-PL')}</td><td>${esc(s.astronaut)}</td><td>${s.checkin.sleep}h</td><td>${s.checkin.fatigue}/5</td><td>${s.reaction.median} ms</td><td><b>${s.composite}</b></td></tr>`).join('') || '<tr><td colspan="6">Brak danych</td></tr>'}</tbody></table></div>
+        <div class="ac-note">Dane zapisane lokalnie (localStorage). Eksport CSV nadaje się do dalszej analizy w aplikacji zdrowotnej.</div>`);
+      $('#ac-ej', root).onclick = () => download('astro-escape.json', exportJSON(), 'application/json');
+      $('#ac-ec', root).onclick = () => download('astro-escape.csv', exportCSV(), 'text/csv');
+      $('#ac-clr', root).onclick = () => { if (confirm('Usunąć WSZYSTKIE sesje i profile?')) { DB.sessions = []; DB.profiles = {}; saveDB(); M = null; updateHeader(); viewData(); } };
+      $('#ac-imp', root).onchange = e => {
+        const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
+        rd.onload = () => { try {
+          const inc = JSON.parse(rd.result); const arr = Array.isArray(inc) ? inc : inc.sessions; if (!Array.isArray(arr)) throw 0;
+          const have = new Set(DB.sessions.map(x => x.id)); const add = arr.filter(x => x && x.id && x.composite != null && x.chimp && x.flappy && !have.has(x.id));
+          DB.sessions = DB.sessions.concat(add); if (inc.profiles) Object.keys(inc.profiles).forEach(k => { if (!DB.profiles[k]) DB.profiles[k] = inc.profiles[k]; });
+          saveDB(); alert('Zaimportowano sesji: ' + add.length); viewData();
+        } catch (err) { alert('Nieprawidłowy plik JSON (wymagany format v2).'); } };
+        rd.readAsText(f);
+      };
+    }
+
+    go('mission');
+  }
+
+  window.AstroCognition = { mount, getSessions, getRanking, exportJSON, exportCSV, onSaved: cb => listeners.push(cb), setVitals, getVitals: () => VITALS, setRequiredMeasurements, getRequiredMeasurements: () => REQ.slice(), planMission, getOrders, getRewards, setRewards, onOrder: cb => orderListeners.push(cb), duckFor, duckURL, DUCKS };
+  const host = document.getElementById('astro-cognition-game');
+  if (host) mount(host);
+})();
+</script>
+</body>
+</html>
