@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { MISSION, formatTimestamp, type SeriesPoint } from '../data/mockData'
 import { STATUS_COLORS, STATUS_LABELS, type ParamDef } from '../data/parameters'
+import { useTheme } from '../../../shared/theme/ThemeContext'
 
 export const COLORS = {
   actual: '#00f5d4',
@@ -18,6 +19,13 @@ export const COLORS = {
   grid: 'rgba(148, 163, 184, 0.12)',
   axis: '#94a3b8',
   simulated: '#c084fc',
+}
+
+const COZY_CHART_COLORS = {
+  actual: '#5C7451',
+  predicted: '#9A8C7E',
+  grid: 'rgba(73, 72, 63, 0.14)',
+  axis: '#68665A',
 }
 
 interface Props {
@@ -75,6 +83,9 @@ function StatusDot({ cx, cy, payload }: DotProps) {
 
 /** Chart: blue line = measurements, gray dashed = mission prediction, colored zones = thresholds */
 export default function TrendChart({ param, data, height = 150 }: Props) {
+  const { theme } = useTheme()
+  const isCozy = theme === 'cozy'
+  const chartColors = isCozy ? COZY_CHART_COLORS : COLORS
   const { warning, critical, direction } = param.thresholds
   const values = data.flatMap((d) => [d.predicted, d.actual ?? d.predicted])
   // environment charts always show the warning limit for context
@@ -87,7 +98,7 @@ export default function TrendChart({ param, data, height = 150 }: Props) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -8 }}>
-        <CartesianGrid stroke={COLORS.grid} vertical={false} />
+        <CartesianGrid stroke={chartColors.grid} vertical={false} />
 
         {/* warning / critical zones (clipped to the visible range) */}
         <ReferenceArea y1={warning} y2={critical} fill={STATUS_COLORS.warning} fillOpacity={0.08} ifOverflow="hidden" />
@@ -95,9 +106,9 @@ export default function TrendChart({ param, data, height = 150 }: Props) {
         <ReferenceLine y={warning} stroke={STATUS_COLORS.warning} strokeDasharray="6 4" strokeOpacity={0.8} />
         <ReferenceLine y={critical} stroke={STATUS_COLORS.critical} strokeDasharray="6 4" strokeOpacity={0.8} />
 
-        <XAxis dataKey="day" stroke={COLORS.axis} tick={{ fontSize: 11 }} tickLine={false} ticks={[0, 5, 10, 15, 20, 25, 30]} />
+        <XAxis dataKey="day" stroke={chartColors.axis} tick={{ fontSize: 11 }} tickLine={false} ticks={[0, 5, 10, 15, 20, 25, 30]} />
         <YAxis
-          stroke={COLORS.axis}
+          stroke={chartColors.axis}
           tick={{ fontSize: 11 }}
           tickLine={false}
           axisLine={false}
@@ -108,25 +119,25 @@ export default function TrendChart({ param, data, height = 150 }: Props) {
         />
         <Tooltip
           content={(props: unknown) => <ChartTooltip {...(props as TooltipProps)} param={param} />}
-          cursor={{ stroke: 'rgba(0, 245, 212, 0.35)' }}
+          cursor={{ stroke: isCozy ? 'rgba(185, 137, 112, 0.45)' : 'rgba(0, 245, 212, 0.35)' }}
         />
         <ReferenceLine
           x={MISSION.currentDay}
-          stroke="rgba(255,255,255,0.35)"
+          stroke={isCozy ? 'rgba(73, 72, 63, 0.4)' : 'rgba(255,255,255,0.35)'}
           strokeDasharray="2 3"
-          label={{ value: 'today', fill: '#cfd6e4', fontSize: 10, position: 'insideTopRight' }}
+          label={{ value: 'today', fill: isCozy ? '#49483F' : '#cfd6e4', fontSize: 10, position: 'insideTopRight' }}
         />
-        <Line type="monotone" dataKey="predicted" stroke={COLORS.predicted} strokeWidth={2} strokeDasharray="6 5" dot={false} isAnimationActive={false} />
+        <Line type="monotone" dataKey="predicted" stroke={chartColors.predicted} strokeWidth={2} strokeDasharray="6 5" dot={false} isAnimationActive={false} />
         <Line
           type="monotone"
           dataKey="actual"
-          stroke={COLORS.actual}
+          stroke={chartColors.actual}
           strokeWidth={2}
           dot={(props: unknown) => {
             const { cx, cy, payload, index } = props as DotProps & { index: number }
             return <StatusDot key={index} cx={cx} cy={cy} payload={payload} />
           }}
-          activeDot={{ r: 5, stroke: '#0b1426', strokeWidth: 2 }}
+          activeDot={{ r: 5, stroke: isCozy ? '#F5F0E7' : '#0b1426', strokeWidth: 2 }}
           connectNulls
         />
       </LineChart>
@@ -135,9 +146,11 @@ export default function TrendChart({ param, data, height = 150 }: Props) {
 }
 
 export function ChartLegend() {
+  const { theme } = useTheme()
+  const actualColor = theme === 'cozy' ? COZY_CHART_COLORS.actual : COLORS.actual
   return (
     <div className="legend">
-      <span><i style={{ background: COLORS.actual }} /> Measured</span>
+      <span><i style={{ background: actualColor }} /> Measured</span>
       <span><i className="dashed" /> Predicted for mission (model – mocked for now)</span>
       <span><b className="legend__dot" style={{ background: STATUS_COLORS.warning }} /> Warning</span>
       <span><b className="legend__dot" style={{ background: STATUS_COLORS.critical }} /> Critical</span>
