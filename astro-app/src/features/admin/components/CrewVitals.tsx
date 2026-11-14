@@ -8,8 +8,6 @@ interface Props {
   onSelect: (id: string) => void
   /** worst status from each astronaut's latest measurements (charts) */
   trendStatus: Record<string, Status>
-  /** worst predicted status from the running simulation (if any) */
-  predicted?: Record<string, Status> | null
 }
 
 // Path of one ECG "beat" (repeated and animated by shifting)
@@ -22,7 +20,7 @@ const STAT_KEYS = [
   { key: 'temperature', unit: '°C' },
 ] as const
 
-export default function CrewVitals({ selectedId, onSelect, trendStatus, predicted }: Props) {
+export default function CrewVitals({ selectedId, onSelect, trendStatus }: Props) {
   const [vitals, setVitals] = useState<Record<string, LiveVitals>>(() =>
     Object.fromEntries(CREW.map((m) => [m.id, generateLiveVitals(m)])),
   )
@@ -75,11 +73,6 @@ export default function CrewVitals({ selectedId, onSelect, trendStatus, predicte
                 })}
               </div>
               <span className={`status status--${status}`}>{STATUS_LABELS[status]}</span>
-              {predicted && (
-                <span className={`sim-chip sim-chip--${predicted[m.id]}`} title="Predicted by the running scenario simulation">
-                  🔮 {predicted[m.id] === 'ok' ? 'stays nominal' : `predicted ${predicted[m.id]}`}
-                </span>
-              )}
             </button>
           )
         })}

@@ -2,7 +2,6 @@
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  overflow: clip;
   background:
     radial-gradient(ellipse at 20% 30%, rgba(90, 60, 180, 0.35), transparent 50%),
     radial-gradient(ellipse at 80% 70%, rgba(30, 120, 200, 0.3), transparent 50%),
