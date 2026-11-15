@@ -1,0 +1,927 @@
+/* ==========================================================================
+   THEME TOGGLE BUTTON (Shared across Home, User, and Admin)
+   ========================================================================== */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.48rem;
+  padding: 0.42rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.theme-toggle-btn--space {
+  background: rgba(15, 29, 42, 0.88);
+  border: 1px solid rgba(165, 179, 154, 0.55);
+  color: #F5F0E7;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.theme-toggle-btn--space:hover {
+  background: rgba(165, 179, 154, 0.22);
+  border-color: #A5B39A;
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn--cozy {
+  background: #E8DFD0;
+  border: 1.5px solid #B98970;
+  color: #49483F;
+  box-shadow: 0 3px 10px rgba(73, 72, 63, 0.1);
+}
+
+.theme-toggle-btn--cozy:hover {
+  background: #dfd3bf;
+  border-color: #9e6e56;
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn__icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.theme-toggle-btn__swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 2px;
+}
+
+.theme-toggle-btn__swatches i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(73, 72, 63, 0.35);
+}
+
+.home__theme-bar {
+  position: absolute;
+  top: 1.4rem;
+  right: 1.8rem;
+  z-index: 10;
+}
+
+.admin__header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+/* ==========================================================================
+   COZY LIGHT THEME PALETTE (`[data-theme="cozy"]`)
+   Tło (Background): #F5F0E7
+   Karty (Cards):    #E8DFD0
+   Szałwia (Sage):   #A5B39A
+   Akcent (Accent):  #B98970
+   Tekst (Text):     #49483F
+   ========================================================================== */
+
+html[data-theme="cozy"],
+html[data-theme="cozy"] body {
+  background: #F5F0E7;
+  color: #49483F;
+}
+
+/* 1. SpaceBackground -> Warm Soothing Cozy Backdrop */
+[data-theme="cozy"] .space {
+  background:
+    radial-gradient(ellipse at 18% 22%, rgba(165, 179, 154, 0.28), transparent 55%),
+    radial-gradient(ellipse at 82% 76%, rgba(185, 137, 112, 0.22), transparent 55%),
+    linear-gradient(180deg, #F5F0E7 0%, #EFE8DC 100%);
+  color: #49483F;
+}
+
+[data-theme="cozy"] .space__stars--small,
+[data-theme="cozy"] .space__stars--big {
+  opacity: 0.12;
+  filter: invert(0.75) sepia(0.5);
+}
+
+/* 2. Home (Role Selection Screen) */
+[data-theme="cozy"] .home__title {
+  color: #49483F;
+  text-shadow: 0 2px 12px rgba(185, 137, 112, 0.25);
+}
+
+[data-theme="cozy"] .home__btn {
+  color: #49483F;
+  background: #E8DFD0;
+  border: 2px solid #A5B39A;
+  box-shadow: 0 6px 20px rgba(73, 72, 63, 0.08);
+}
+
+[data-theme="cozy"] .home__btn:hover {
+  background: #B98970;
+  border-color: #B98970;
+  color: #F5F0E7;
+  box-shadow: 0 10px 24px rgba(185, 137, 112, 0.35);
+}
+
+/* ==========================================================================
+   3. USER PANEL & ALL SUBPAGES (Cozy Theme Overrides)
+   ========================================================================== */
+[data-theme="cozy"] .hud-topbar {
+  border-bottom: 1px solid #A5B39A;
+}
+
+[data-theme="cozy"] .hud-topbar__sub {
+  color: #6E6C5F;
+}
+
+[data-theme="cozy"] .hud-topbar__title,
+[data-theme="cozy"] .user-subpage__title {
+  color: #49483F;
+}
+
+[data-theme="cozy"] .user-subpage__subtitle {
+  color: #6E6C5F;
+}
+
+[data-theme="cozy"] .user-back-btn,
+[data-theme="cozy"] .user-nav-link {
+  background: #E8DFD0 !important;
+  border: 1px solid #A5B39A !important;
+  color: #49483F !important;
+  box-shadow: 0 2px 6px rgba(73, 72, 63, 0.05);
+}
+
+[data-theme="cozy"] .user-back-btn:hover,
+[data-theme="cozy"] .user-nav-link:hover {
+  background: #A5B39A !important;
+  border-color: #8c9d80 !important;
+  color: #2f3029 !important;
+  box-shadow: 0 4px 12px rgba(165, 179, 154, 0.35) !important;
+}
+
+[data-theme="cozy"] .user-nav-link--accent {
+  background: #B98970 !important;
+  border-color: #a6765d !important;
+  color: #F5F0E7 !important;
+}
+
+[data-theme="cozy"] .hud-astronaut-badge {
+  background: linear-gradient(180deg, #A5B39A, #8F9F83);
+  border: 1px solid #7c8d70;
+  color: #F5F0E7;
+  text-shadow: none;
+}
+
+[data-theme="cozy"] .hud-astronaut-line {
+  background: #B98970;
+  box-shadow: none;
+}
+
+/* Cards & Surfaces in User Panel */
+[data-theme="cozy"] .hud-card,
+[data-theme="cozy"] .dash-card,
+[data-theme="cozy"] .todo-card,
+[data-theme="cozy"] .reaction-popup-card,
+[data-theme="cozy"] .hud-oled-frame,
+[data-theme="cozy"] .chatbot-hud-card,
+[data-theme="cozy"] .shop-card {
+  background: #E8DFD0 !important;
+  border: 1px solid #A5B39A !important;
+  color: #49483F !important;
+  box-shadow: 0 6px 20px rgba(73, 72, 63, 0.07) !important;
+}
+
+[data-theme="cozy"] .reaction-popup-card--warning {
+  border-color: #B98970 !important;
+}
+
+[data-theme="cozy"] .reaction-popup-card--success {
+  border-color: #6B7F5E !important;
+}
+
+[data-theme="cozy"] .reaction-popup-card__badge,
+[data-theme="cozy"] .chatbot-hud-card__badge,
+[data-theme="cozy"] .live-badge,
+[data-theme="cozy"] .user-points-pill {
+  background: rgba(165, 179, 154, 0.4) !important;
+  border-color: #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .reaction-popup-card__toggle {
+  background: #F5F0E7 !important;
+  border-color: #A5B39A !important;
+  color: #49483F !important;
+}
+
+/* Headings & Text inside User Panel */
+[data-theme="cozy"] .hud-section-title,
+[data-theme="cozy"] .dash-card__title,
+[data-theme="cozy"] .todo-card__title,
+[data-theme="cozy"] .reaction-popup-card__message h4,
+[data-theme="cozy"] .todo-section__name,
+[data-theme="cozy"] .hud-oled-frame__vitals,
+[data-theme="cozy"] .podium-box__name,
+[data-theme="cozy"] .shop-card__name,
+[data-theme="cozy"] .guide-nav-btn__title,
+[data-theme="cozy"] .guide-detail__title,
+[data-theme="cozy"] .guide-purpose-box h4,
+[data-theme="cozy"] .guide-steps-box h4,
+[data-theme="cozy"] .measurement-group-box__title {
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .todo-card__sub,
+[data-theme="cozy"] .reaction-popup-card__message p,
+[data-theme="cozy"] .todo-section__desc,
+[data-theme="cozy"] .hud-oled-frame__desc,
+[data-theme="cozy"] .guide-preview-card__sub,
+[data-theme="cozy"] .chatbot-hud-card__sub,
+[data-theme="cozy"] .hydration-hud-card__sub,
+[data-theme="cozy"] .hydration-hud-card__liters,
+[data-theme="cozy"] .points-hud-card__hint,
+[data-theme="cozy"] .telemetry-bottom-card__sub,
+[data-theme="cozy"] .mood-hud-card__count,
+[data-theme="cozy"] .shop-card__desc,
+[data-theme="cozy"] .guide-nav-btn__cat,
+[data-theme="cozy"] .guide-meta-box__label,
+[data-theme="cozy"] .guide-purpose-box p,
+[data-theme="cozy"] .metric-tile__label,
+[data-theme="cozy"] .metric-tile__sub,
+[data-theme="cozy"] .webllm-control-box__hint,
+[data-theme="cozy"] .duck-chat-prompts__title,
+[data-theme="cozy"] .chat-bubble__meta {
+  color: #6B695B !important;
+}
+
+/* OLED Duck Frame & Screen in Cozy Mode */
+[data-theme="cozy"] .hud-corner {
+  border-color: #B98970 !important;
+}
+
+[data-theme="cozy"] .hud-oled-frame__tag {
+  color: #6E6C5F !important;
+}
+
+[data-theme="cozy"] .hud-oled-frame__score {
+  background: #F5F0E7 !important;
+  color: #49483F !important;
+  border-color: #B98970 !important;
+}
+
+[data-theme="cozy"] .oled-screen {
+  background: #F5F0E7 !important;
+  border-color: #A5B39A !important;
+  box-shadow: inset 0 2px 8px rgba(73, 72, 63, 0.08) !important;
+}
+
+/* Todo Accordion & Task Items in Cozy Mode */
+[data-theme="cozy"] .todo-section,
+[data-theme="cozy"] .todo-item,
+[data-theme="cozy"] .guide-chip-btn,
+[data-theme="cozy"] .chatbot-topic-pill,
+[data-theme="cozy"] .podium-box,
+[data-theme="cozy"] .mood-hud-btn,
+[data-theme="cozy"] .metric-tile,
+[data-theme="cozy"] .measurement-group-box,
+[data-theme="cozy"] .meas-tab-btn,
+[data-theme="cozy"] .sec-stat-pill,
+[data-theme="cozy"] .guide-nav-btn,
+[data-theme="cozy"] .guide-meta-box,
+[data-theme="cozy"] .guide-step-item,
+[data-theme="cozy"] .duck-chat-sidebar__avatar,
+[data-theme="cozy"] .webllm-control-box,
+[data-theme="cozy"] .duck-prompt-btn {
+  background: #F5F0E7 !important;
+  border-color: #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .todo-section--open {
+  border-color: #B98970 !important;
+  background: #F3EDE2 !important;
+}
+
+[data-theme="cozy"] .todo-section__trigger,
+[data-theme="cozy"] .todo-item__label,
+[data-theme="cozy"] .measurement-group-box__row,
+[data-theme="cozy"] .sec-stat-pill__top,
+[data-theme="cozy"] .duck-chat-sidebar__status {
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .todo-section__badge,
+[data-theme="cozy"] .stats-live-tag,
+[data-theme="cozy"] .shop-card__claimed,
+[data-theme="cozy"] .mood-history-chip,
+[data-theme="cozy"] .chat-engine-tag,
+[data-theme="cozy"] .chat-rag-badge {
+  background: rgba(165, 179, 154, 0.35) !important;
+  color: #49483F !important;
+  border-color: #A5B39A !important;
+}
+
+[data-theme="cozy"] .todo-section__chevron,
+[data-theme="cozy"] .todo-item__pts,
+[data-theme="cozy"] .todo-input__unit,
+[data-theme="cozy"] .points-hud-card__val,
+[data-theme="cozy"] .podium-box__pts,
+[data-theme="cozy"] .hydration-hud-card__sub strong,
+[data-theme="cozy"] .hydration-hud-card__liters strong,
+[data-theme="cozy"] .telemetry-bottom-card__sub strong,
+[data-theme="cozy"] .sec-stat-pill__top strong,
+[data-theme="cozy"] .shop-card__category,
+[data-theme="cozy"] .guide-detail__cat,
+[data-theme="cozy"] .mood-history-log__title,
+[data-theme="cozy"] .webllm-control-box__title,
+[data-theme="cozy"] .duck-chat-sidebar__status strong,
+[data-theme="cozy"] .chat-bubble__sender {
+  color: #9A644B !important;
+  text-shadow: none !important;
+}
+
+[data-theme="cozy"] .todo-item--done {
+  background: rgba(165, 179, 154, 0.28) !important;
+  border-color: #829674 !important;
+}
+
+[data-theme="cozy"] .todo-item__circle {
+  background: #E8DFD0 !important;
+  border-color: #A5B39A !important;
+}
+
+[data-theme="cozy"] .todo-item--done .todo-item__circle {
+  background: #A5B39A !important;
+  border-color: #6B7F5E !important;
+  box-shadow: none !important;
+}
+
+[data-theme="cozy"] .todo-item--done .todo-item__circle::after {
+  color: #2f3029 !important;
+}
+
+[data-theme="cozy"] .todo-item--done .todo-item__text {
+  color: #6E6C5F !important;
+}
+
+[data-theme="cozy"] .todo-input,
+[data-theme="cozy"] .webllm-model-select,
+[data-theme="cozy"] .duck-chat-input {
+  background: #F5F0E7 !important;
+  border: 1px solid #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .podium-box--rank-1 {
+  background: linear-gradient(180deg, rgba(165, 179, 154, 0.42), #F5F0E7) !important;
+  border-color: #B98970 !important;
+  box-shadow: 0 4px 14px rgba(185, 137, 112, 0.2) !important;
+}
+
+[data-theme="cozy"] .podium-box--rank-1 .podium-box__place {
+  color: #9A644B !important;
+}
+
+[data-theme="cozy"] .mood-hud-btn--active,
+[data-theme="cozy"] .meas-tab-btn--active,
+[data-theme="cozy"] .guide-nav-btn--active {
+  background: rgba(185, 137, 112, 0.24) !important;
+  border-color: #B98970 !important;
+  color: #49483F !important;
+  box-shadow: none !important;
+}
+
+[data-theme="cozy"] .hydration-bar-track,
+[data-theme="cozy"] .sec-stat-pill__bar,
+[data-theme="cozy"] .webllm-progress-bar {
+  background: #E8DFD0 !important;
+  border-color: #A5B39A !important;
+}
+
+[data-theme="cozy"] .hydration-bar-fill,
+[data-theme="cozy"] .sec-stat-pill__fill,
+[data-theme="cozy"] .webllm-progress-bar__fill {
+  background: linear-gradient(90deg, #A5B39A, #B98970) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="cozy"] .guide-purpose-box {
+  background: rgba(165, 179, 154, 0.25) !important;
+  border-left-color: #B98970 !important;
+}
+
+[data-theme="cozy"] .guide-step-num {
+  background: #B98970 !important;
+  border-color: #9A644B !important;
+  color: #F5F0E7 !important;
+}
+
+/* Primary Action Buttons in User Panel */
+[data-theme="cozy"] .chatbot-hud-card__open-btn,
+[data-theme="cozy"] .guide-preview-card__open-btn,
+[data-theme="cozy"] .hydration-add-btn,
+[data-theme="cozy"] .points-hud-card__btn,
+[data-theme="cozy"] .telemetry-more-btn,
+[data-theme="cozy"] .todo-add-btn,
+[data-theme="cozy"] .todo-game-btn,
+[data-theme="cozy"] .duck-chat-send-btn,
+[data-theme="cozy"] .webllm-load-btn,
+[data-theme="cozy"] .shop-card__btn--buy {
+  background: #B98970 !important;
+  border-color: #a3745b !important;
+  color: #F5F0E7 !important;
+  box-shadow: 0 3px 10px rgba(185, 137, 112, 0.25) !important;
+}
+
+[data-theme="cozy"] .chatbot-hud-card__open-btn:hover,
+[data-theme="cozy"] .guide-preview-card__open-btn:hover,
+[data-theme="cozy"] .hydration-add-btn:hover,
+[data-theme="cozy"] .points-hud-card__btn:hover,
+[data-theme="cozy"] .telemetry-more-btn:hover,
+[data-theme="cozy"] .duck-chat-send-btn:hover,
+[data-theme="cozy"] .webllm-load-btn:hover:not(:disabled),
+[data-theme="cozy"] .shop-card__btn--buy:hover {
+  background: #a4735a !important;
+}
+
+[data-theme="cozy"] .shop-card__btn--disabled {
+  background: rgba(73, 72, 63, 0.12) !important;
+  color: #7D7B6D !important;
+}
+
+[data-theme="cozy"] .guide-chip-btn:hover,
+[data-theme="cozy"] .chatbot-topic-pill:hover,
+[data-theme="cozy"] .duck-prompt-btn:hover,
+[data-theme="cozy"] .chat-followup-chip:hover,
+[data-theme="cozy"] .meas-tab-btn:hover,
+[data-theme="cozy"] .guide-nav-btn:hover {
+  background: #A5B39A !important;
+  border-color: #829474 !important;
+  color: #2f3029 !important;
+}
+
+/* Duck AI Chat Bubbles in Cozy Mode */
+[data-theme="cozy"] .chat-bubble--duck {
+  background: #F5F0E7 !important;
+  border: 1px solid #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .chat-bubble--user {
+  background: #B98970 !important;
+  border: 1px solid #a3745b !important;
+  color: #F5F0E7 !important;
+}
+
+[data-theme="cozy"] .chat-bubble--user .chat-bubble__meta,
+[data-theme="cozy"] .chat-bubble--user .chat-bubble__sender,
+[data-theme="cozy"] .chat-bubble--user .chat-bubble__text {
+  color: #F5F0E7 !important;
+}
+
+[data-theme="cozy"] .chat-followup-chip {
+  background: #F5F0E7 !important;
+  border: 1px solid #A5B39A !important;
+  color: #49483F !important;
+}
+
+/* User SVG Charts in Cozy Mode */
+[data-theme="cozy"] .chart-svg text {
+  fill: #68665A !important;
+}
+
+[data-theme="cozy"] .chart-svg line {
+  stroke: rgba(73, 72, 63, 0.15) !important;
+}
+
+[data-theme="cozy"] .chart-legend {
+  color: #49483F !important;
+}
+
+/* ==========================================================================
+   4. ADMIN PANEL (Crew Medical Officer Console — Cozy Theme Overrides)
+   ========================================================================== */
+[data-theme="cozy"] .admin {
+  --accent: #B98970;
+  --accent-secondary: #A5B39A;
+  --panel-bg: #E8DFD0;
+  --panel-border: #A5B39A;
+  --text-muted: #6E6C5F;
+  color: #49483F;
+}
+
+[data-theme="cozy"] .admin__header {
+  border-bottom: 1px solid #A5B39A;
+}
+
+[data-theme="cozy"] .admin__header h1 {
+  background: linear-gradient(180deg, #A5B39A, #8F9F83);
+  border: 1px solid #7c8d70;
+  color: #F5F0E7;
+  text-shadow: none;
+}
+
+[data-theme="cozy"] .admin__back {
+  background: #E8DFD0;
+  border: 1px solid #A5B39A;
+  color: #49483F;
+}
+
+[data-theme="cozy"] .admin__back:hover {
+  background: #A5B39A;
+  color: #2f3029;
+  box-shadow: none;
+}
+
+[data-theme="cozy"] .admin__mission {
+  background: #E8DFD0;
+  border: 1px solid #A5B39A;
+  color: #6E6C5F;
+}
+
+[data-theme="cozy"] .admin__mission b,
+[data-theme="cozy"] .accent {
+  color: #9E684E;
+  text-shadow: none;
+}
+
+[data-theme="cozy"] .admin__btn {
+  background: #B98970;
+  border: 1px solid #a17259;
+  color: #F5F0E7;
+  margin-left: 0;
+}
+
+[data-theme="cozy"] .admin__btn:hover {
+  background: #a3735a;
+  box-shadow: 0 4px 12px rgba(185, 137, 112, 0.3);
+}
+
+/* Panels & Cards in Admin */
+[data-theme="cozy"] .panel,
+[data-theme="cozy"] .sim {
+  background: #E8DFD0 !important;
+  border: 1px solid #A5B39A !important;
+  box-shadow: 0 6px 20px rgba(73, 72, 63, 0.07) !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .panel__title {
+  color: #49483F;
+  border-bottom-color: rgba(73, 72, 63, 0.14);
+}
+
+/* Scenario Simulator in Cozy Mode */
+[data-theme="cozy"] .sim__bar {
+  background: #E8DFD0 !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .sim__bar:hover {
+  background: #dfd5c4 !important;
+}
+
+[data-theme="cozy"] .sim__title {
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .sim__title small,
+[data-theme="cozy"] .sim__status {
+  color: #6E6C5F !important;
+}
+
+[data-theme="cozy"] .sim__status--running {
+  background: rgba(185, 137, 112, 0.2) !important;
+  border-color: #B98970 !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .sim__chevron {
+  background: #F5F0E7 !important;
+  border-color: #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .sim-box {
+  background: #F5F0E7 !important;
+  border: 1px solid #A5B39A !important;
+}
+
+[data-theme="cozy"] .sim-box__head {
+  border-bottom-color: rgba(73, 72, 63, 0.12) !important;
+}
+
+[data-theme="cozy"] .sim__step {
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .sim-box__badge {
+  background: #E8DFD0 !important;
+  border-color: #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .sim-selector-trigger,
+[data-theme="cozy"] .sim-card,
+[data-theme="cozy"] .sim__loc-pill,
+[data-theme="cozy"] .sim__slider-card,
+[data-theme="cozy"] .sim-day-scrubber,
+[data-theme="cozy"] .sim-earth-side {
+  background: #E8DFD0 !important;
+  border-color: #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .sim-selector-trigger b,
+[data-theme="cozy"] .sim-card b,
+[data-theme="cozy"] .sim__loc-pill b,
+[data-theme="cozy"] .sim-day-scrubber__title strong,
+[data-theme="cozy"] .sim-earth-side__title {
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .sim-selector-trigger small,
+[data-theme="cozy"] .sim-card small,
+[data-theme="cozy"] .sim__loc-pill span,
+[data-theme="cozy"] .sim__field-label-row,
+[data-theme="cozy"] .sim-day-scrubber__title small,
+[data-theme="cozy"] .sim-earth-side__sub {
+  color: #6E6C5F !important;
+}
+
+[data-theme="cozy"] .sim-selector-trigger__action,
+[data-theme="cozy"] .sim-day-step-btn {
+  background: #F5F0E7 !important;
+  border-color: #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .sim-day-step-btn:hover:not(:disabled) {
+  background: #B98970 !important;
+  border-color: #B98970 !important;
+  color: #F5F0E7 !important;
+}
+
+[data-theme="cozy"] .sim__slider-val,
+[data-theme="cozy"] .sim-day-scrubber__badge {
+  background: rgba(185, 137, 112, 0.22) !important;
+  border-color: #B98970 !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .hud-range-slider,
+[data-theme="cozy"] .hud-range-slider--day {
+  background: rgba(165, 179, 154, 0.55) !important;
+}
+
+[data-theme="cozy"] .hud-range-slider::-webkit-slider-thumb {
+  background: #B98970 !important;
+  border-color: #F5F0E7 !important;
+  box-shadow: 0 2px 6px rgba(73, 72, 63, 0.25) !important;
+}
+
+[data-theme="cozy"] .seg {
+  background: #E8DFD0 !important;
+  border-color: #A5B39A !important;
+}
+
+[data-theme="cozy"] .seg__btn {
+  color: #6E6C5F !important;
+}
+
+[data-theme="cozy"] .seg__btn--active {
+  background: #A5B39A !important;
+  color: #2f3029 !important;
+  border-color: #7f9173 !important;
+  box-shadow: none !important;
+}
+
+[data-theme="cozy"] .sim__run,
+[data-theme="cozy"] .sim__plan--earth {
+  background: #B98970 !important;
+  border-color: #9e6e56 !important;
+  color: #F5F0E7 !important;
+  box-shadow: none !important;
+}
+
+[data-theme="cozy"] .sim__run:hover:not(:disabled),
+[data-theme="cozy"] .sim__plan--earth:hover {
+  background: #a4735a !important;
+}
+
+[data-theme="cozy"] .sim__stop {
+  background: #E8DFD0 !important;
+  border-color: #B98970 !important;
+  color: #49483F !important;
+}
+
+/* Simulator Impact Table in Cozy Mode */
+[data-theme="cozy"] .impact--large {
+  background: #E8DFD0 !important;
+  border-color: #A5B39A !important;
+}
+
+[data-theme="cozy"] .impact--large thead th {
+  background: #dfd5c4 !important;
+  color: #49483F !important;
+  border-bottom-color: #A5B39A !important;
+}
+
+[data-theme="cozy"] .impact__row th,
+[data-theme="cozy"] .impact__row td {
+  border-bottom-color: rgba(73, 72, 63, 0.1) !important;
+}
+
+[data-theme="cozy"] .impact__who-btn b,
+[data-theme="cozy"] .impact__station-label b {
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .impact__who-btn small,
+[data-theme="cozy"] .impact__val-unit {
+  color: #6E6C5F !important;
+}
+
+[data-theme="cozy"] .sim-kpi-card {
+  background: #E8DFD0 !important;
+  border-color: #A5B39A !important;
+}
+
+[data-theme="cozy"] .sim-kpi-card__label,
+[data-theme="cozy"] .sim-kpi-card small {
+  color: #6E6C5F !important;
+}
+
+/* AlertQueue & CommsLog in Cozy Mode */
+[data-theme="cozy"] .alerts__tabs {
+  background: #F5F0E7 !important;
+  border-color: #A5B39A !important;
+}
+
+[data-theme="cozy"] .alerts__tab {
+  color: #6E6C5F !important;
+}
+
+[data-theme="cozy"] .alerts__tab--active {
+  background: #A5B39A !important;
+  color: #2f3029 !important;
+  box-shadow: none !important;
+}
+
+[data-theme="cozy"] .alert-item,
+[data-theme="cozy"] .comms__item {
+  background: #F5F0E7 !important;
+  border-color: #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .alert-item--critical {
+  border-left-color: #c25953 !important;
+}
+
+[data-theme="cozy"] .alert-item__who,
+[data-theme="cozy"] .alert-item__param-label,
+[data-theme="cozy"] .comms__head b {
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .alert-item__metric-box,
+[data-theme="cozy"] .alert-item__recs {
+  background: #E8DFD0 !important;
+  border-color: #A5B39A !important;
+}
+
+[data-theme="cozy"] .alert-item__limit-badge {
+  background: #F5F0E7 !important;
+  border-color: #A5B39A !important;
+  color: #6E6C5F !important;
+}
+
+[data-theme="cozy"] .alert-btn {
+  background: #E8DFD0 !important;
+  border-color: #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .alert-btn:hover,
+[data-theme="cozy"] .alert-btn.is-open {
+  background: #A5B39A !important;
+  color: #2f3029 !important;
+}
+
+[data-theme="cozy"] .rec {
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .rec--selected {
+  background: rgba(165, 179, 154, 0.35) !important;
+  border-color: #A5B39A !important;
+  color: #2f3029 !important;
+}
+
+[data-theme="cozy"] .rec__send {
+  background: #B98970 !important;
+  border-color: #9e6e56 !important;
+  color: #F5F0E7 !important;
+}
+
+[data-theme="cozy"] .comms__text,
+[data-theme="cozy"] .comms__head {
+  color: #6E6C5F !important;
+}
+
+/* CrewVitals, ParameterPicker & TrendChart Cards in Cozy Mode */
+[data-theme="cozy"] .crew__card,
+[data-theme="cozy"] .chart-card,
+[data-theme="cozy"] .picker__item,
+[data-theme="cozy"] .pchip {
+  background: #F5F0E7 !important;
+  border-color: #A5B39A !important;
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .crew__card--active {
+  background: #f0e8da !important;
+  border-color: #B98970 !important;
+  box-shadow: 0 0 0 2px rgba(185, 137, 112, 0.35) !important;
+}
+
+[data-theme="cozy"] .crew__info strong,
+[data-theme="cozy"] .crew__stats b,
+[data-theme="cozy"] .chart-card h3 {
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .crew__code,
+[data-theme="cozy"] .chart-card h3 span {
+  color: #9A644B !important;
+}
+
+[data-theme="cozy"] .crew__info,
+[data-theme="cozy"] .crew__stats,
+[data-theme="cozy"] .legend {
+  color: #6E6C5F !important;
+}
+
+[data-theme="cozy"] .crew__ecg {
+  background: #E8DFD0 !important;
+  border-color: rgba(165, 179, 154, 0.5) !important;
+}
+
+[data-theme="cozy"] .crew__ecg path {
+  stroke: #5C7451 !important;
+}
+
+[data-theme="cozy"] .pchip--on {
+  background: #A5B39A !important;
+  border-color: #7c8e70 !important;
+  color: #2f3029 !important;
+}
+
+[data-theme="cozy"] .chart-tooltip {
+  background: #F5F0E7 !important;
+  border: 1px solid #A5B39A !important;
+  color: #49483F !important;
+  box-shadow: 0 6px 18px rgba(73, 72, 63, 0.14) !important;
+}
+
+[data-theme="cozy"] .chart-tooltip__title,
+[data-theme="cozy"] .chart-tooltip b {
+  color: #49483F !important;
+}
+
+[data-theme="cozy"] .admin .live-dot {
+  background: rgba(165, 179, 154, 0.35) !important;
+  border-color: #6B7F5E !important;
+  color: #49483F !important;
+}
+
+/* Custom Scrollbars in Cozy Mode */
+[data-theme="cozy"] .alerts__list,
+[data-theme="cozy"] .comms__list,
+[data-theme="cozy"] .impact,
+[data-theme="cozy"] .sim-scenarios-drawer,
+[data-theme="cozy"] .hud-custom-scroll,
+[data-theme="cozy"] .todo-accordion {
+  scrollbar-color: #B98970 #E8DFD0;
+}
+
+[data-theme="cozy"] .alerts__list::-webkit-scrollbar-track,
+[data-theme="cozy"] .comms__list::-webkit-scrollbar-track,
+[data-theme="cozy"] .impact::-webkit-scrollbar-track,
+[data-theme="cozy"] .sim-scenarios-drawer::-webkit-scrollbar-track,
+[data-theme="cozy"] .hud-custom-scroll::-webkit-scrollbar-track {
+  background: #E8DFD0 !important;
+  border-color: #A5B39A !important;
+}
+
+[data-theme="cozy"] .alerts__list::-webkit-scrollbar-thumb,
+[data-theme="cozy"] .comms__list::-webkit-scrollbar-thumb,
+[data-theme="cozy"] .impact::-webkit-scrollbar-thumb,
+[data-theme="cozy"] .sim-scenarios-drawer::-webkit-scrollbar-thumb,
+[data-theme="cozy"] .hud-custom-scroll::-webkit-scrollbar-thumb,
+[data-theme="cozy"] .todo-accordion::-webkit-scrollbar-thumb {
+  background: #B98970 !important;
+  border-color: #a17259 !important;
+}

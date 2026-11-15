@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pl"><head><meta charset="utf-8"><title>ASTRO EYE // ISS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{color-scheme:dark;--bg:#050a14;--pn:#0b1626;--ln:#1c3350;--tx:#cfe6ff;--ac:#2ee6d6;--wn:#ffb02e;--er:#ff4d5e;--ok:#4dff9a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:radial-gradient(ellipse at 50% 40%,#0a1a30,var(--bg));color:var(--tx);font-family:"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden;user-select:none}
+.scr{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:14px;overflow:auto}
+.scr.on{display:flex}
+h1{letter-spacing:.35em;font-weight:300;margin:0;font-size:clamp(28px,5vw,52px);color:var(--ac)}
+h2{letter-spacing:.2em;font-weight:400;margin:0;color:var(--ac)}
+p{max-width:640px;line-height:1.55;margin:0}
+.btn{background:transparent;border:1px solid var(--ac);color:var(--ac);padding:12px 28px;letter-spacing:.2em;font-size:15px;cursor:pointer;border-radius:3px}
+.btn:hover{background:var(--ac);color:#021}
+.small{font-size:13px;opacity:.65}
+.msg{font-size:clamp(18px,3vw,30px);letter-spacing:.15em;min-height:1.4em}
+#game{background:#000;cursor:none}canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hud{position:absolute;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 18px;font-size:12px;letter-spacing:.15em;background:rgba(5,10,20,.7);border:0 solid var(--ln);pointer-events:none;gap:8px}
+.top{top:0;border-bottom-width:1px;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+.bot{bottom:0;border-top-width:1px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+.hud b{color:var(--ac);font-weight:600}
+.bar{height:3px;background:var(--ln);position:absolute;left:0;right:0;top:100%}.bar i{display:block;height:100%;width:0;background:var(--ac)}
+#cam{position:absolute;right:14px;bottom:60px;width:128px;height:96px;object-fit:cover;transform:scaleX(-1);border:1px solid var(--ln);opacity:.55;border-radius:4px;display:none}
+.pill{padding:3px 10px;border:1px solid currentColor;border-radius:20px}
+.ok{color:var(--ok)}.warn{color:var(--wn)}.bad{color:var(--er)}
+#pause{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:rgba(5,10,20,.82);color:var(--er);font-size:clamp(22px,4vw,40px);letter-spacing:.2em;text-align:center}
+table{border-collapse:collapse;min-width:min(520px,92vw)}td,th{border-bottom:1px solid var(--ln);padding:8px 14px;text-align:left}th{color:var(--ac);font-weight:400;letter-spacing:.1em;font-size:13px}
+.cards{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}.card{background:var(--pn);border:1px solid var(--ln);padding:14px 24px;border-radius:6px;min-width:150px}.card big{display:block;font-size:34px;color:var(--ac)}.card span{font-size:12px;letter-spacing:.1em;opacity:.8}
+</style></head><body>
+
+<div id="start" class="scr on">
+<div class="small">ASTRO EYE // ISS</div><h1>ASTRO EYE</h1>
+<h2>TRENING WZROKU</h2>
+<p class="msg" style="font-size:18px">ASTRONAUTO, ROZPOCZYNAMY PROCEDURĘ TRENINGU WZROKU.</p>
+<p>Utrzymuj głowę stabilnie i wykonuj polecenia wyświetlane na ekranie. Twoim zadaniem jest precyzyjne śledzenie punktów za pomocą wzroku i utrzymanie spojrzenia na każdym przez ok. 1 sekundę. Pomarańczowa kropka pokazuje, gdzie patrzysz — nakryj nią cel (zmieni kolor na zielony). Na każdy punkt masz 3 sekundy.</p>
+<p class="small"><b id="mode" class="ok">Sterowanie wzrokiem w przeglądarce (MediaPipe).</b> Wymaga kamery i internetu przy pierwszym uruchomieniu (pobranie modelu). Obraz z kamery jest przetwarzany lokalnie i nigdzie nie jest wysyłany. Mysz i klawiatura nie sterują grą. Wyniki to wskaźniki treningowe, nie diagnoza medyczna.</p>
+<button class="btn" id="go">ROZPOCZNIJ MISJĘ</button>
+</div>
+
+<div id="calib" class="scr">
+<h2>ETAP 0 // PRZYGOTOWANIE ASTRONAUTY</h2>
+<video id="vid" playsinline muted style="width:240px;height:180px;object-fit:cover;transform:scaleX(-1);border:1px solid var(--ln);border-radius:4px;background:#000"></video>
+<div id="checks" style="text-align:left;line-height:1.9"></div>
+<div class="msg" id="cmsg"></div>
+<button class="btn" id="cbtn" style="display:none">DALEJ</button>
+<div class="small">Ustaw głowę prosto, w odległości ok. 50–70 cm od ekranu.</div>
+</div>
+
+<div id="game" class="scr" style="padding:0;display:none">
+<canvas id="cv"></canvas>
+<video id="cam" playsinline muted></video>
+<div class="hud top"><span>ASTRO EYE // ISS<br><b>EYE TRAINING</b></span><span id="hcam">CAMERA —</span><span id="hmis">MISSION</span><span>CELE <b id="hcnt">0/0</b></span><div class="bar"><i id="pbar"></i></div></div>
+<div class="hud bot"><span>HEAD <span class="pill ok" id="hhead">STABLE</span></span><span id="hmsg">POZYCJA STABILNA</span><span>REACTION <b id="hrt">—</b></span><span class="small">MAINTAIN HEAD POSITION · FOLLOW THE TARGET</span></div>
+<div id="pause"><div>TRENING WSTRZYMANY</div><div style="font-size:16px">USTAW GŁOWĘ PROSTO</div></div>
+</div>
+
+<div id="report" class="scr">
+<h2>ETAP 4 // PODSUMOWANIE MISJI</h2>
+<div class="cards" id="cards"></div>
+<table id="rtab"></table>
+<table id="stab"></table>
+<p class="small">Wskaźniki treningowe, nie diagnoza medyczna. Kamera laptopa daje jedynie orientacyjną ocenę — przed zastosowaniem w realnym treningu zweryfikuj dokładność.</p>
+<button class="btn" id="again">NOWA MISJA</button>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.scr').forEach(s=>{s.classList.remove('on');s.style.display=''});const e=$(id);e.classList.add('on');if(id==='game')e.style.display='block'};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const R=85,HOLD=1000,TIMEOUT=3000,GAP=450;
+let mx=-999,my=-999,keyH=false,stream=null,camOk=false,ref=null;
+/* ---- Eye tracking w przeglądarce: MediaPipe Face Landmarker (tęczówki) + kalibracja regresją ---- */
+let API=true,S=null,gazeLost=false,lostCount=0,gsx=null,gsy=null,LM=null,model=null,refPose=null,collect=null,trkOn=false,lastVT=-1;
+const LAMBDA=1;
+async function loadLM(){
+  const B="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+  const {FaceLandmarker,FilesetResolver}=await import(B+"/vision_bundle.mjs");
+  const fs=await FilesetResolver.forVisionTasks(B+"/wasm");
+  const mk=d=>FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",delegate:d},runningMode:"VIDEO",numFaces:1,outputFacialTransformationMatrixes:true});
+  try{return await mk("GPU")}catch(e){return await mk("CPU")}
+}
+function feat(res,v){
+  const L=res.faceLandmarks&&res.faceLandmarks[0],M=res.facialTransformationMatrixes&&res.facialTransformationMatrixes[0];
+  if(!L||!M)return null;
+  const m=M.data,vw=v.videoWidth,vh=v.videoHeight,P=i=>({x:L[i].x*vw,y:L[i].y*vh});
+  const eye=(a,b,ir,tp,bt)=>{const A=P(a),B=P(b),I=P(ir),T=P(tp),D=P(bt),w=Math.hypot(B.x-A.x,B.y-A.y),ux=(B.x-A.x)/w,uy=(B.y-A.y)/w,dx=I.x-(A.x+B.x)/2,dy=I.y-(A.y+B.y)/2;
+    return{ox:(dx*ux+dy*uy)/w,oy:(-dx*uy+dy*ux)/w,open:Math.hypot(T.x-D.x,T.y-D.y)/w}};
+  const r=eye(33,133,468,159,145),l=eye(362,263,473,386,374),d=180/Math.PI;
+  return{ox:(r.ox+l.ox)/2,oy:(r.oy+l.oy)/2,open:Math.min(r.open,l.open),
+    yaw:Math.atan2(m[8],m[10])*d,pitch:Math.atan2(-m[9],Math.hypot(m[8],m[10]))*d,roll:Math.atan2(m[1],m[0])*d,tx:m[12],ty:m[13],tz:m[14]}
+}
+const fvec=f=>[1,f.ox,f.oy,f.ox*f.ox,f.oy*f.oy,f.ox*f.oy,f.yaw,f.pitch,f.tx,f.ty];
+function fit(samples){
+  const X=samples.map(s=>fvec(s.f)),d=X[0].length,n=X.length,mu=Array(d).fill(0),sd=Array(d).fill(1);
+  for(let j=1;j<d;j++){mu[j]=X.reduce((a,r)=>a+r[j],0)/n;sd[j]=Math.sqrt(X.reduce((a,r)=>a+(r[j]-mu[j])**2,0)/n)||1}
+  const Z=X.map(r=>r.map((v,j)=>j?(v-mu[j])/sd[j]:1));
+  const solve=t=>{const A=Array.from({length:d},(_,i)=>{const row=Array(d+1).fill(0);for(let j=0;j<d;j++){let s=0;for(let k=0;k<n;k++)s+=Z[k][i]*Z[k][j];row[j]=s+(i&&i===j?LAMBDA:0)}let b=0;for(let k=0;k<n;k++)b+=Z[k][i]*t[k];row[d]=b;return row});
+    for(let i=0;i<d;i++){let p=i;for(let r=i+1;r<d;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];for(let r=0;r<d;r++)if(r!==i){const q=A[r][i]/A[i][i];for(let c=i;c<=d;c++)A[r][c]-=q*A[i][c]}}
+    return A.map((r,i)=>r[d]/r[i])};
+  return{mu,sd,wx:solve(samples.map(s=>s.x)),wy:solve(samples.map(s=>s.y))}
+}
+function predict(f){const z=fvec(f).map((v,j)=>j?(v-model.mu[j])/model.sd[j]:1);let x=0,y=0;for(let j=0;j<z.length;j++){x+=z[j]*model.wx[j];y+=z[j]*model.wy[j]}return[x,y]}
+function setGaze(v,x,y){
+  if(v){const X=Math.min(Math.max(x,0),1)*innerWidth,Y=Math.min(Math.max(y,0),1)*innerHeight;if(gsx===null){gsx=X;gsy=Y}else{gsx+=.3*(X-gsx);gsy+=.3*(Y-gsy)}mx=gsx;my=gsy;gazeLost=false}
+  else if(!gazeLost){gazeLost=true;if(cur)lostCount++}
+}
+function trackLoop(){
+  requestAnimationFrame(trackLoop);
+  const v=$('game').style.display==='block'?$('cam'):$('vid');
+  if(!LM||!camOk||v.readyState<2||v.currentTime===lastVT)return;
+  lastVT=v.currentTime;
+  let res;try{res=LM.detectForVideo(v,performance.now())}catch(e){return}
+  const f=feat(res,v);S.t=performance.now();S.face=!!f;S.pose=f;
+  if(!f){S.valid=false;S.motion=refPose?99:0;setGaze(false);return}
+  if(refPose){const sh=Math.hypot(f.tx-refPose.tx,f.ty-refPose.ty,(f.tz-refPose.tz)*.6),rot=Math.max(Math.abs(f.yaw-refPose.yaw),Math.abs(f.pitch-refPose.pitch),Math.abs(f.roll-refPose.roll));S.motion=9*Math.max(sh/2.5,rot/6)}else S.motion=0;
+  const blink=f.open<.14;
+  if(collect&&!blink)collect.push(f);
+  if(model&&!blink){const[p,q]=predict(f);S.valid=true;setGaze(true,p,q)}else{S.valid=false;if(model)setGaze(false)}
+}
+function drawCal(t,now){
+  const px=t.x*innerWidth,py=t.y*innerHeight,p=1+Math.sin(now/150)*.12;
+  ctx.strokeStyle='rgba(46,230,214,.4)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(px,py,R*p,0,7);ctx.stroke();
+  ctx.fillStyle='#2ee6d6';ctx.shadowColor='#2ee6d6';ctx.shadowBlur=20;ctx.beginPath();ctx.arc(px,py,12,0,7);ctx.fill();ctx.shadowBlur=0;
+  ctx.strokeStyle='#4dff9a';ctx.lineWidth=4;ctx.beginPath();ctx.arc(px,py,R,-Math.PI/2,-Math.PI/2+(t.prog||0)*Math.PI*2);ctx.stroke();
+  ctx.fillStyle='rgba(207,230,255,.7)';ctx.font='15px sans-serif';ctx.textAlign='center';ctx.fillText('PATRZ NA ŚWIECĄCY PUNKT · NIE RUSZAJ GŁOWĄ',innerWidth/2,innerHeight/2+120);ctx.textAlign='left';
+}
+async function calibrateAPI(ck,cm,row){
+  const fail=msg=>{ck.innerHTML+='<div class="bad">'+msg+'</div>';cm.textContent='';const b=$('cbtn');b.style.display='';b.textContent='WRÓĆ';b.onclick=()=>show('start');return false};
+  model=null;refPose=null;gsx=null;gazeLost=false;S={cam:false,face:false,valid:false,motion:0,t:0};
+  cm.textContent='ŁADOWANIE MODELU ŚLEDZENIA WZROKU…';
+  try{if(!LM)LM=await loadLM()}catch(e){return fail('Nie można załadować modelu MediaPipe (wymagany internet). '+(e.message||e))}
+  await startCam();
+  if(!camOk)return fail('Brak dostępu do kamery — zezwól na jej użycie w przeglądarce.');
+  if(!trkOn){trkOn=true;trackLoop()}
+  let okSince=0,acc=[];
+  while(true){
+    await sleep(120);
+    const f=(performance.now()-S.t<500&&S.face)?S.pose:null,dist=f?Math.abs(f.tz):0;
+    const cD=f&&dist>35&&dist<85,cH=f&&Math.abs(f.yaw)<12&&Math.abs(f.pitch)<18&&Math.abs(f.roll)<12;
+    ck.innerHTML=row('Kamera dostępna',true)+row('Twarz w polu widzenia',!!f)+row('Odległość od ekranu'+(f?' ≈ '+Math.round(dist)+' cm':'')+' (35–85 cm)',!!cD)+row('Głowa w prawidłowej pozycji',!!cH);
+    cm.textContent=(f&&cD&&cH)?'POZYCJA STABILNA – TRZYMAJ':'USTAW GŁOWĘ PROSTO';
+    if(f&&cD&&cH){if(!okSince)okSince=performance.now();acc.push(f);if(performance.now()-okSince>1500)break}else{okSince=0;acc=[]}
+  }
+  const k=a=>acc.reduce((s,f)=>s+f[a],0)/acc.length;
+  refPose={tx:k('tx'),ty:k('ty'),tz:k('tz'),yaw:k('yaw'),pitch:k('pitch'),roll:k('roll')};
+  cm.textContent='POZYCJA REFERENCYJNA ZAPISANA';await sleep(700);
+  show('game');resize();$('hcam').textContent='CAMERA ACTIVE';$('hcam').className='ok';$('cam').style.display='block';$('hmis').textContent='KALIBRACJA SPOJRZENIA';
+  const pts=[];[.17,.5,.83].forEach(y=>[.1,.5,.9].forEach(x=>pts.push([x,y])));
+  const samples=[];$('hcnt').textContent='0/9';
+  for(let i=0;i<pts.length;i++){
+    const t={x:pts[i][0],y:pts[i][1],calib:true,manual:true,prog:0},pr=runTarget(t);
+    await sleep(900);const buf=[];collect=buf;const t0=performance.now();
+    while(buf.length<20&&performance.now()-t0<4000){t.prog=buf.length/20;await sleep(40)}
+    collect=null;buf.forEach(f=>samples.push({f,x:t.x,y:t.y}));finish(true);await pr;
+    $('hcnt').textContent=(i+1)+'/9';$('pbar').style.width=((i+1)/9*100)+'%';
+  }
+  if(samples.length<80)return fail('Za mało poprawnych pomiarów oczu — popraw oświetlenie twarzy i spróbuj ponownie.');
+  model=fit(samples);
+  let err=0;samples.forEach(s=>{const[p,q]=predict(s.f);err+=Math.hypot((p-s.x)*innerWidth,(q-s.y)*innerHeight)});err/=samples.length;
+  $('hmis').textContent='KALIBRACJA ZAKOŃCZONA · błąd ≈ '+Math.round(err)+' px';await sleep(1800);
+  return true;
+}
+
+/* ---- Head stability (local frame-difference vs reference) ---- */
+const gc=document.createElement('canvas');gc.width=64;gc.height=48;const gx=gc.getContext('2d',{willReadFrequently:true});
+let curVideo=null;
+function grab(){
+  if(!camOk||!curVideo||curVideo.readyState<2)return null;
+  gx.drawImage(curVideo,0,0,64,48);const d=gx.getImageData(0,0,64,48).data,a=new Float32Array(64*48);
+  for(let i=0;i<a.length;i++)a[i]=(d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11);
+  return a}
+function motionScore(){
+  if(API)return S&&S.motion!=null?S.motion:0;
+  if(!camOk||!ref)return 0;
+  const f=grab();if(!f)return 0;
+  let s=0,n=0,m1=0,m2=0;for(let i=0;i<f.length;i++){m1+=f[i];m2+=ref[i]}m1/=f.length;m2/=f.length;
+  for(let y=6;y<42;y++)for(let x=12;x<52;x++){const i=y*64+x;s+=Math.abs((f[i]-m1)-(ref[i]-m2));n++}
+  return s/n}
+const T_WARN=9,T_BAD=18;
+let head={state:'ok',badSince:0,okSince:0,paused:false,breaks:0,score:0,flag:false};
+function updateHead(now){
+  const sc=head.score=motionScore();
+  const lvl=sc>T_BAD?2:sc>T_WARN?1:0;
+  if(lvl===2){head.okSince=0;if(!head.badSince)head.badSince=now;if(!head.paused&&now-head.badSince>500){head.paused=true;head.breaks++}}
+  else{head.badSince=0;if(lvl===0){if(!head.okSince)head.okSince=now;if(head.paused&&now-head.okSince>700){head.paused=false;head.restored=now}}else head.okSince=0}
+  const st=head.paused?'pause':lvl?'warn':'ok';
+  if(st!=='ok'&&cur)cur.headIssue=true;
+  head.state=st;
+  const h=$('hhead'),m=$('hmsg');
+  if(st==='pause'){h.textContent='UNSTABLE';h.className='pill bad';m.textContent='TRENING WSTRZYMANY';m.className='bad'}
+  else if(st==='warn'){h.textContent='MOVING';h.className='pill warn';m.textContent='UWAGA – UTRZYMAJ GŁOWĘ';m.className='warn'}
+  else if(head.restored&&now-head.restored<1800){h.textContent='STABLE';h.className='pill ok';m.textContent='STABILIZACJA PRZYWRÓCONA';m.className='ok'}
+  else{h.textContent='STABLE';h.className='pill ok';m.textContent='POZYCJA STABILNA';m.className='ok'}
+  $('pause').style.display=head.paused?'flex':'none'}
+
+/* ---- Camera ---- */
+async function startCam(){
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},facingMode:'user'},audio:false});
+    for(const v of [$('vid'),$('cam')]){v.srcObject=stream;v.play().catch(()=>{})}camOk=true}
+  catch(e){camOk=false}}
+
+/* ---- Calibration (Stage 0) ---- */
+const cv=$('cv'),ctx=cv.getContext('2d');
+function resize(){const d=devicePixelRatio||1;cv.width=innerWidth*d;cv.height=innerHeight*d;ctx.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',resize);
+
+async function calibrate(){
+  show('calib');curVideo=$('vid');const ck=$('checks'),cm=$('cmsg');$('cbtn').style.display='none';
+  const row=(t,ok)=>`<div class="${ok===null?'':ok?'ok':'bad'}">${ok===null?'…':ok?'✔':'✘'} ${t}</div>`;
+  ck.innerHTML=row('Sprawdzanie kamery',null);cm.textContent='';
+  if(API)return calibrateAPI(ck,cm,row);
+  await startCam();await sleep(900);
+  let f=camOk?grab():null,vis=!!f;
+  let bright=0;if(f){for(const v of f)bright+=v;bright/=f.length}
+  ck.innerHTML=row('Kamera dostępna',camOk)+row('Obraz z kamery odczytany',vis&&bright>15)+
+    row('Twarz w polu widzenia (szacunek)',camOk&&bright>15)+row('Odległość i pozycja głowy (szacunek)',camOk&&bright>15);
+  if(!camOk){ck.innerHTML+='<div class="warn">⚠ Brak kamery — kontrola głowy tylko symulowana klawiszem H.</div>';await sleep(1800)}
+  for(let i=3;i>0;i--){cm.textContent='USTAW GŁOWĘ PROSTO · '+i;await sleep(1000)}
+  ref=grab();cm.textContent='POZYCJA REFERENCYJNA ZAPISANA';await sleep(900);
+  /* gaze calibration points */
+  show('game');resize();$('hcam').textContent=camOk?'CAMERA ACTIVE':'CAMERA OFF';$('hcam').className=camOk?'ok':'warn';
+  $('hmis').textContent='KALIBRACJA SPOJRZENIA';curVideo=$('cam');$('cam').style.display=camOk?'block':'none';
+  const pts=[[.5,.5],[.12,.2],[.88,.2],[.12,.82],[.88,.82]];
+  $('hcnt').textContent='0/'+pts.length;
+  for(let i=0;i<pts.length;i++){await runTarget({x:pts[i][0],y:pts[i][1],calib:true});$('hcnt').textContent=(i+1)+'/'+pts.length;$('pbar').style.width=((i+1)/pts.length*100)+'%'}
+}
+
+/* ---- Targets ---- */
+let cur=null,stats=[],stageIdx=0;
+function rnd(){return[.08+Math.random()*.84,.17+Math.random()*.66]}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+const STAGES=[
+ {name:'MISSION 01 / RANDOM TARGETS',label:'Losowe punkty',make:()=>Array.from({length:8},()=>{const p=rnd();return{x:p[0],y:p[1],loc:'losowo'}})},
+ {name:'MISSION 02 / DIRECTIONS',label:'Kierunki',make:()=>{const d=[[.5,.17,'góra'],[.5,.83,'dół'],[.08,.5,'lewa'],[.92,.5,'prawa']];return shuffle(d).map(a=>({x:a[0],y:a[1],loc:a[2]}))}},
+ {name:'MISSION 03 / CORNERS',label:'Narożniki',make:()=>{const c=[[.07,.17,'lewy górny'],[.93,.17,'prawy górny'],[.07,.83,'lewy dolny'],[.93,.83,'prawy dolny']];return shuffle(c.concat(c)).map(a=>({x:a[0],y:a[1],loc:a[2]}))}}
+];
+
+function runTarget(t){
+  return new Promise(res=>{
+    cur=t;t.headIssue=false;t.done=false;t.inside=false;t.reaction=null;t.holdStart=0;t.elapsed=0;t.holdMs=0;t.shownAt=0;t.last=performance.now();t.res=res;t.born=performance.now();
+  })}
+function finish(ok){const t=cur;cur=null;t.ok=ok;t.res(t)}
+
+let tick0=0;
+function drawMarker(){
+  if(mx<-500)return;
+  const lost=API&&gazeLost,t=cur,hit=t&&!lost&&Math.hypot(mx-t.x*innerWidth,my-t.y*innerHeight)<R;
+  if(lost){ctx.strokeStyle='rgba(255,176,46,.8)';ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(mx,my,14,0,7);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#ffb02e';ctx.font='14px sans-serif';ctx.fillText('UTRATA POMIARU WZROKU – ZADANIE WSTRZYMANE',20,innerHeight-80);return}
+  const c=hit?'#4dff9a':'#ff8a2e';
+  ctx.strokeStyle=c;ctx.globalAlpha=.5;ctx.lineWidth=2;ctx.beginPath();ctx.arc(mx,my,20,0,7);ctx.stroke();ctx.globalAlpha=1;
+  ctx.fillStyle=c;ctx.shadowColor=c;ctx.shadowBlur=18;ctx.beginPath();ctx.arc(mx,my,9,0,7);ctx.fill();ctx.shadowBlur=0;
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(mx,my,9,0,7);ctx.stroke();
+}
+function loop(now){
+  requestAnimationFrame(loop);
+  if($('game').style.display!=='block')return;
+  const w=innerWidth,h=innerHeight;ctx.clearRect(0,0,w,h);
+  // stars
+  ctx.fillStyle='#fff';for(let i=0;i<60;i++){const x=(i*9301+49297)%233280/233280*w,y=(i*4561+1237)%1000/1000*h;ctx.globalAlpha=.15+(i%5)*.07;ctx.fillRect(x,y,1.5,1.5)}ctx.globalAlpha=1;
+  updateHead(now);
+  const dt=(API&&gazeLost)?0:Math.min(now-(tick0||now),100);tick0=now;
+  const t=cur;if(!t)return drawMarker();
+  if(t.manual){drawCal(t,now);return}
+  if(head.paused){return drawMarker()}
+  const gapLeft=GAP-(now-t.born);
+  if(gapLeft>0){return drawMarker()}
+  if(!t.shownAt){t.shownAt=1;t.elapsed=0}
+  t.elapsed+=dt;
+  const px=t.x*w,py=t.y*h,d=Math.hypot(mx-px,my-py),inside=d<R&&!(API&&gazeLost);
+  if(inside&&t.reaction===null)t.reaction=t.elapsed;
+  if(inside){t.holdMs+=dt;if(!t.calib&&t.holdMs>=HOLD){const hold=t.holdMs;t.holdTime=hold;return finish(true)}if(t.calib&&t.holdMs>=700)return finish(true)}else t.holdMs=0;
+  if(!t.calib&&t.elapsed>=TIMEOUT)return finish(false);
+  // draw
+  const prog=Math.min(t.holdMs/(t.calib?700:HOLD),1),pulse=1+Math.sin(now/180)*.06;
+  ctx.strokeStyle='rgba(46,230,214,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(px,py,R*pulse,0,7);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(px-R-14,py);ctx.lineTo(px-R+10,py);ctx.moveTo(px+R-10,py);ctx.lineTo(px+R+14,py);ctx.moveTo(px,py-R-14);ctx.lineTo(px,py-R+10);ctx.moveTo(px,py+R-10);ctx.lineTo(px,py+R+14);ctx.stroke();
+  ctx.fillStyle=inside?'#4dff9a':'#2ee6d6';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=20;ctx.beginPath();ctx.arc(px,py,12,0,7);ctx.fill();ctx.shadowBlur=0;
+  if(prog>0){ctx.strokeStyle='#4dff9a';ctx.lineWidth=4;ctx.beginPath();ctx.arc(px,py,R,-Math.PI/2,-Math.PI/2+prog*Math.PI*2);ctx.stroke()}
+  if(!t.calib){ctx.fillStyle='rgba(207,230,255,.35)';ctx.fillRect(px-R,py+R+14,2*R*(1-t.elapsed/TIMEOUT),2)}
+  drawMarker();
+}
+requestAnimationFrame(loop);
+
+/* ---- Mission ---- */
+async function mission(){
+  stats=[];const t0=performance.now();head.breaks=0;lostCount=0;
+  const okc=await calibrate();if(okc===false)return;
+  $('cam').style.display=camOk?'block':'none';
+  const total=STAGES.reduce((a,s)=>a+s.make().length,0);let done=0;
+  for(let s=0;s<STAGES.length;s++){
+    stageIdx=s;$('hmis').textContent=STAGES[s].name;
+    const list=STAGES[s].make();$('hcnt').textContent=done+'/'+total;
+    const intro=$('hmsg');
+    for(const tg of list){
+      const r=await runTarget(tg);
+      r.stage=s;stats.push(r);done++;
+      $('hcnt').textContent=done+'/'+total;$('pbar').style.width=(done/total*100)+'%';
+      if(r.reaction!==null)$('hrt').textContent=(r.reaction/1000).toFixed(2).replace('.',',')+' s';
+    }
+    await sleep(400);
+  }
+  report(performance.now()-t0);
+}
+
+function pct(a,b){return b?Math.round(a/b*100):0}
+function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
+const fs=s=>(s/1000).toFixed(2).replace('.',',')+' s';
+function summary(list){
+  const n=list.length,hit=list.filter(x=>x.ok),full=hit.filter(x=>!x.headIssue);
+  const rt=list.filter(x=>x.reaction!==null).map(x=>x.reaction);
+  return{n,hit:hit.length,full:full.length,rt:avg(rt),track:pct(hit.length,n),corr:pct(full.length,n),hold:avg(hit.map(x=>x.holdTime||0))}}
+function report(dur){
+  show('report');if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}camOk=false;
+  const S=summary(stats),m=Math.floor(dur/60000),s=Math.round(dur%60000/1000);
+  $('cards').innerHTML=`<div class="card"><big>${S.rt?fs(S.rt):'—'}</big><span>CZAS REAKCJI</span></div><div class="card"><big>${S.track}%</big><span>SKUTECZNOŚĆ ŚLEDZENIA</span></div><div class="card"><big>${S.corr}%</big><span>POPRAWNOŚĆ WYKONANIA</span></div>`;
+  $('rtab').innerHTML=`<tr><th>PARAMETR</th><th>WYNIK</th></tr>
+  <tr><td>Czas treningu</td><td>${m} min ${s} s</td></tr><tr><td>Liczba punktów</td><td>${S.n}</td></tr>
+  <tr><td>Poprawnie zaliczone (cel + 1 s)</td><td>${S.hit}</td></tr><tr><td>Wykonane w pełni (z stabilną głową)</td><td>${S.full}</td></tr>
+  <tr><td>Średni czas utrzymania spojrzenia</td><td>${S.hold?fs(S.hold):'—'}</td></tr>
+  <tr><td>Przerwy związane z ruchem głowy</td><td>${head.breaks}</td></tr>
+  <tr><td>Utracone pomiary wzroku</td><td>${lostCount}</td></tr>`;
+  let rows='<tr><th>ETAP</th><th>REAKCJA</th><th>ŚLEDZENIE</th><th>POPRAWNOŚĆ</th></tr>';
+  STAGES.forEach((st,i)=>{const q=summary(stats.filter(x=>x.stage===i));rows+=`<tr><td>${st.label}</td><td>${q.rt?fs(q.rt):'—'}</td><td>${q.track}%</td><td>${q.corr}%</td></tr>`});
+  const locs={};stats.forEach(x=>{(locs[x.loc]=locs[x.loc]||[]).push(x)});
+  rows+='<tr><th colspan="4">WEDŁUG LOKALIZACJI (skuteczność)</th></tr>';
+  Object.keys(locs).filter(k=>k!=='losowo').forEach(k=>{const q=summary(locs[k]);rows+=`<tr><td>${k}</td><td>${q.rt?fs(q.rt):'—'}</td><td>${q.track}%</td><td>${q.corr}%</td></tr>`});
+  $('stab').innerHTML=rows;
+}
+
+$('go').onclick=()=>{if(!API)return;try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}mission()};
+$('again').onclick=()=>show('start');
+</script></body></html>

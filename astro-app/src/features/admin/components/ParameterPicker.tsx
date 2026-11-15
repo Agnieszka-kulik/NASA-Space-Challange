@@ -1,28 +1,30 @@
-import { CATEGORY_LABELS, PARAMETERS, type ParamCategory } from '../data/parameters'
+import { PARAMETERS, type ParamCategory } from '../data/parameters'
 
 interface Props {
+  category: ParamCategory
   selected: string[]
   onToggle: (id: string) => void
 }
 
-const CATEGORIES: ParamCategory[] = ['astronaut', 'environment']
-
-export default function ParameterPicker({ selected, onToggle }: Props) {
+/** Compact toggle chips placed right above the charts they control */
+export default function ParameterPicker({ category, selected, onToggle }: Props) {
   return (
-    <section className="panel picker">
-      <h2 className="panel__title">Choose parameters</h2>
-      {CATEGORIES.map((cat) => (
-        <fieldset key={cat} className="picker__group">
-          <legend>{CATEGORY_LABELS[cat]}</legend>
-          {PARAMETERS.filter((p) => p.category === cat).map((p) => (
-            <label key={p.id} className="picker__item">
-              <input type="checkbox" checked={selected.includes(p.id)} onChange={() => onToggle(p.id)} />
-              <span>{p.label}</span>
-              <span className="picker__unit">{p.unit}</span>
-            </label>
-          ))}
-        </fieldset>
-      ))}
-    </section>
+    <div className="picker-chips" role="group" aria-label="Choose parameters">
+      {PARAMETERS.filter((p) => p.category === category).map((p) => {
+        const on = selected.includes(p.id)
+        return (
+          <button
+            key={p.id}
+            className={`pchip ${on ? 'pchip--on' : ''}`}
+            aria-pressed={on}
+            onClick={() => onToggle(p.id)}
+            title={p.info}
+          >
+            {on ? '✓ ' : '+ '}
+            {p.label}
+          </button>
+        )
+      })}
+    </div>
   )
 }
