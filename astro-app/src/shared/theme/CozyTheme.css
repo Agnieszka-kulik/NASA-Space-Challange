@@ -118,7 +118,7 @@ html[data-theme="cozy"] body {
 }
 
 [data-theme="cozy"] .home__btn:hover {
-  background: #B98970;
+  background: #946450;
   border-color: #B98970;
   color: #F5F0E7;
   box-shadow: 0 10px 24px rgba(185, 137, 112, 0.35);
@@ -161,7 +161,7 @@ html[data-theme="cozy"] body {
 }
 
 [data-theme="cozy"] .user-nav-link--accent {
-  background: #B98970 !important;
+  background: #946450 !important;
   border-color: #a6765d !important;
   color: #F5F0E7 !important;
 }
@@ -174,7 +174,7 @@ html[data-theme="cozy"] body {
 }
 
 [data-theme="cozy"] .hud-astronaut-line {
-  background: #B98970;
+  background: #946450;
   box-shadow: none;
 }
 
@@ -412,7 +412,7 @@ html[data-theme="cozy"] body {
 }
 
 [data-theme="cozy"] .guide-step-num {
-  background: #B98970 !important;
+  background: #946450 !important;
   border-color: #9A644B !important;
   color: #F5F0E7 !important;
 }
@@ -428,7 +428,7 @@ html[data-theme="cozy"] body {
 [data-theme="cozy"] .duck-chat-send-btn,
 [data-theme="cozy"] .webllm-load-btn,
 [data-theme="cozy"] .shop-card__btn--buy {
-  background: #B98970 !important;
+  background: #946450 !important;
   border-color: #a3745b !important;
   color: #F5F0E7 !important;
   box-shadow: 0 3px 10px rgba(185, 137, 112, 0.25) !important;
@@ -469,7 +469,7 @@ html[data-theme="cozy"] body {
 }
 
 [data-theme="cozy"] .chat-bubble--user {
-  background: #B98970 !important;
+  background: #946450 !important;
   border: 1px solid #a3745b !important;
   color: #F5F0E7 !important;
 }
@@ -503,7 +503,7 @@ html[data-theme="cozy"] body {
    4. ADMIN PANEL (Crew Medical Officer Console — Cozy Theme Overrides)
    ========================================================================== */
 [data-theme="cozy"] .admin {
-  --accent: #B98970;
+  --accent: #946450;
   --accent-secondary: #A5B39A;
   --panel-bg: #E8DFD0;
   --panel-border: #A5B39A;
@@ -547,7 +547,7 @@ html[data-theme="cozy"] body {
 }
 
 [data-theme="cozy"] .admin__btn {
-  background: #B98970;
+  background: #946450;
   border: 1px solid #a17259;
   color: #F5F0E7;
   margin-left: 0;
@@ -658,7 +658,7 @@ html[data-theme="cozy"] body {
 }
 
 [data-theme="cozy"] .sim-day-step-btn:hover:not(:disabled) {
-  background: #B98970 !important;
+  background: #946450 !important;
   border-color: #B98970 !important;
   color: #F5F0E7 !important;
 }
@@ -676,7 +676,7 @@ html[data-theme="cozy"] body {
 }
 
 [data-theme="cozy"] .hud-range-slider::-webkit-slider-thumb {
-  background: #B98970 !important;
+  background: #946450 !important;
   border-color: #F5F0E7 !important;
   box-shadow: 0 2px 6px rgba(73, 72, 63, 0.25) !important;
 }
@@ -699,7 +699,7 @@ html[data-theme="cozy"] body {
 
 [data-theme="cozy"] .sim__run,
 [data-theme="cozy"] .sim__plan--earth {
-  background: #B98970 !important;
+  background: #946450 !important;
   border-color: #9e6e56 !important;
   color: #F5F0E7 !important;
   box-shadow: none !important;
@@ -821,7 +821,7 @@ html[data-theme="cozy"] body {
 }
 
 [data-theme="cozy"] .rec__send {
-  background: #B98970 !important;
+  background: #946450 !important;
   border-color: #9e6e56 !important;
   color: #F5F0E7 !important;
 }
@@ -922,6 +922,217 @@ html[data-theme="cozy"] body {
 [data-theme="cozy"] .sim-scenarios-drawer::-webkit-scrollbar-thumb,
 [data-theme="cozy"] .hud-custom-scroll::-webkit-scrollbar-thumb,
 [data-theme="cozy"] .todo-accordion::-webkit-scrollbar-thumb {
-  background: #B98970 !important;
+  background: #946450 !important;
   border-color: #a17259 !important;
 }
+
+/* ==========================================================================
+   5. CONTRAST FIXES (Cozy) — no light/white text on light backgrounds
+   Darker "ink" versions of the status & accent colours for the beige theme.
+   ========================================================================== */
+html[data-theme="cozy"] {
+  --cozy-ink: #49483F;
+  --cozy-ink-soft: #5c5a50;
+  --cozy-muted: #6E6C5F;
+  --cozy-ok: #2e7d4f;
+  --cozy-warn: #96600c;
+  --cozy-crit: #b3352d;
+  --cozy-teal: #2c7a6e;
+  --cozy-blue: #2b6a8a;
+  --cozy-violet: #6d4aa8;
+  --cozy-btn: #946450;
+}
+
+/* ---- headings that were light on light ---- */
+[data-theme="cozy"] .admin__header h1,
+[data-theme="cozy"] .hud-astronaut-badge,
+[data-theme="cozy"] .hud-astronaut-badge span,
+[data-theme="cozy"] .twin__header h1 {
+  color: var(--cozy-ink) !important;
+  text-shadow: none !important;
+}
+
+/* ---- status texts ---- */
+[data-theme="cozy"] .status--ok,
+[data-theme="cozy"] .stat--ok b { color: var(--cozy-ok) !important; }
+[data-theme="cozy"] .status--warning,
+[data-theme="cozy"] .stat--warning b { color: var(--cozy-warn) !important; }
+[data-theme="cozy"] .status--critical,
+[data-theme="cozy"] .stat--critical b { color: var(--cozy-crit) !important; }
+
+/* ---- pills / badges with pastel text ---- */
+[data-theme="cozy"] .count--ok,
+[data-theme="cozy"] .profile__status--ok,
+[data-theme="cozy"] .impact-status-pill--ok,
+[data-theme="cozy"] .sim-msg-status-pill--delivered,
+[data-theme="cozy"] .pill--ok {
+  color: var(--cozy-ok) !important;
+  background: rgba(46, 125, 79, 0.12) !important;
+  border-color: rgba(46, 125, 79, 0.45) !important;
+}
+[data-theme="cozy"] .count--warning,
+[data-theme="cozy"] .alert-sev-pill--warning,
+[data-theme="cozy"] .profile__status--warning,
+[data-theme="cozy"] .impact-status-pill--warning,
+[data-theme="cozy"] .limit-warn,
+[data-theme="cozy"] .sim-msg-status-pill--transit,
+[data-theme="cozy"] .pill--warning,
+[data-theme="cozy"] .chart-badge--warning {
+  color: var(--cozy-warn) !important;
+  background: rgba(150, 96, 12, 0.12) !important;
+  border-color: rgba(150, 96, 12, 0.45) !important;
+}
+[data-theme="cozy"] .count--critical,
+[data-theme="cozy"] .alert-sev-pill--critical,
+[data-theme="cozy"] .profile__status--critical,
+[data-theme="cozy"] .impact-status-pill--critical,
+[data-theme="cozy"] .limit-crit,
+[data-theme="cozy"] .pill--critical,
+[data-theme="cozy"] .chart-badge--critical {
+  color: var(--cozy-crit) !important;
+  background: rgba(179, 53, 45, 0.1) !important;
+  border-color: rgba(179, 53, 45, 0.45) !important;
+}
+[data-theme="cozy"] .sim-msg-status-pill--waiting,
+[data-theme="cozy"] .webllm-status-pill--idle,
+[data-theme="cozy"] .sim__tag-current {
+  color: var(--cozy-blue) !important;
+  background: rgba(43, 106, 138, 0.1) !important;
+  border-color: rgba(43, 106, 138, 0.4) !important;
+}
+
+/* ---- numbers coloured inline (status / category colours) -> darken them ---- */
+[data-theme="cozy"] .alert-item__param-val,
+[data-theme="cozy"] .impact__val-row b,
+[data-theme="cozy"] .metric-tile__val,
+[data-theme="cozy"] .hud-oled-frame__vitals strong,
+[data-theme="cozy"] .guide-meta-box strong,
+[data-theme="cozy"] .profile__big--warning b,
+[data-theme="cozy"] .profile__big--critical b,
+[data-theme="cozy"] .profile__small--warning b,
+[data-theme="cozy"] .profile__small--critical b {
+  filter: brightness(0.62) saturate(1.3);
+}
+[data-theme="cozy"] .sim-kpi-card--ok .sim-kpi-card__val { color: var(--cozy-ok) !important; }
+[data-theme="cozy"] .sim-kpi-card--warning .sim-kpi-card__val { color: var(--cozy-warn) !important; }
+[data-theme="cozy"] .sim-kpi-card--critical .sim-kpi-card__val { color: var(--cozy-crit) !important; }
+
+/* ---- admin: alert banner, simulator table, misc ---- */
+[data-theme="cozy"] .alert span { color: var(--cozy-ink) !important; }
+[data-theme="cozy"] .alert--critical b { color: var(--cozy-crit) !important; }
+[data-theme="cozy"] .alert--warning b { color: var(--cozy-warn) !important; }
+[data-theme="cozy"] .impact__param-name,
+[data-theme="cozy"] .impact__who-cell b { color: var(--cozy-ink) !important; }
+[data-theme="cozy"] .impact__param-unit,
+[data-theme="cozy"] .impact__who-cell small,
+[data-theme="cozy"] .sim__slider-ticks,
+[data-theme="cozy"] .sim-kpi-card small,
+[data-theme="cozy"] .sim__title small,
+[data-theme="cozy"] .sim-card small { color: var(--cozy-violet) !important; }
+[data-theme="cozy"] .alerts__chevron,
+[data-theme="cozy"] .profile__live-dot { color: var(--cozy-btn) !important; }
+[data-theme="cozy"] .alert-item__limit { color: var(--cozy-muted) !important; }
+
+/* ---- user panel misc ---- */
+[data-theme="cozy"] .my-health-card__hint,
+[data-theme="cozy"] .podium-box__place,
+[data-theme="cozy"] .chat-rag-citations__label { color: var(--cozy-muted) !important; }
+[data-theme="cozy"] .shop-card__btn--disabled { color: var(--cozy-ink-soft) !important; }
+
+/* ==========================================================================
+   6. DIGITAL TWIN PAGE (Cozy)
+   ========================================================================== */
+[data-theme="cozy"] .twin {
+  --accent: var(--cozy-teal);
+  --text-muted: var(--cozy-muted);
+  --ok: var(--cozy-ok);
+  --warn: var(--cozy-warn);
+  --crit: var(--cozy-crit);
+  --sim: var(--cozy-violet);
+  --panel-bg: #E8DFD0;
+  --panel-border: #A5B39A;
+  color: var(--cozy-ink);
+}
+[data-theme="cozy"] .twin__header h1 {
+  background: linear-gradient(180deg, #E8DFD0, #d9cdb8) !important;
+  border-color: #A5B39A !important;
+}
+[data-theme="cozy"] .twin__who b,
+[data-theme="cozy"] .panel__title,
+[data-theme="cozy"] .sysbtn,
+[data-theme="cozy"] .detail__head h2,
+[data-theme="cozy"] .ind__value b,
+[data-theme="cozy"] .modal__head h2,
+[data-theme="cozy"] .modal__x,
+[data-theme="cozy"] .inbox__msg,
+[data-theme="cozy"] .sources summary { color: var(--cozy-ink) !important; }
+[data-theme="cozy"] .twin__back,
+[data-theme="cozy"] .twin__select,
+[data-theme="cozy"] .rchip,
+[data-theme="cozy"] .seg {
+  background: #F5F0E7 !important;
+  color: var(--cozy-ink) !important;
+  border-color: #A5B39A !important;
+}
+[data-theme="cozy"] .twin__xp,
+[data-theme="cozy"] .rchip small,
+[data-theme="cozy"] .routine small,
+[data-theme="cozy"] .todo small {
+  color: var(--cozy-warn) !important;
+}
+[data-theme="cozy"] .twin__xp { background: rgba(150, 96, 12, 0.1) !important; }
+
+[data-theme="cozy"] .btn { background: var(--cozy-teal) !important; border-color: var(--cozy-teal) !important; color: #fff !important; }
+[data-theme="cozy"] .btn--alert { background: var(--cozy-crit) !important; border-color: var(--cozy-crit) !important; }
+[data-theme="cozy"] .btn--ghost { background: transparent !important; color: var(--cozy-ink) !important; border-color: #A5B39A !important; }
+[data-theme="cozy"] .seg__btn--active { background: var(--cozy-teal) !important; color: #fff !important; }
+[data-theme="cozy"] .seg__btn--sim { background: var(--cozy-violet) !important; color: #fff !important; }
+
+[data-theme="cozy"] .twin__legend,
+[data-theme="cozy"] .twin__hint,
+[data-theme="cozy"] .t3d__credit { color: var(--cozy-muted) !important; }
+
+[data-theme="cozy"] .hazard { color: var(--cozy-ink) !important; background: rgba(165, 179, 154, 0.3) !important; border-color: #A5B39A !important; }
+[data-theme="cozy"] .detail__summary { color: var(--cozy-ink); }
+[data-theme="cozy"] .detail__text p,
+[data-theme="cozy"] .ind__explain,
+[data-theme="cozy"] .ind__how,
+[data-theme="cozy"] .tier p,
+[data-theme="cozy"] .stressprof p,
+[data-theme="cozy"] .field { color: var(--cozy-ink-soft) !important; }
+
+[data-theme="cozy"] .inbox { background: #e2ebee !important; border-color: rgba(43, 106, 138, 0.4) !important; }
+[data-theme="cozy"] .inbox b,
+[data-theme="cozy"] .sources a,
+[data-theme="cozy"] .photo { color: var(--cozy-blue) !important; }
+[data-theme="cozy"] .feedback { background: #e3ede6 !important; color: var(--cozy-ink); }
+[data-theme="cozy"] .stressprof { background: #e2ebee !important; }
+
+[data-theme="cozy"] .ind,
+[data-theme="cozy"] .tier,
+[data-theme="cozy"] .fc-row,
+[data-theme="cozy"] .mood,
+[data-theme="cozy"] .chart-tip {
+  background: #F5F0E7 !important;
+  color: var(--cozy-ink) !important;
+  border-color: rgba(165, 179, 154, 0.7);
+}
+[data-theme="cozy"] .ind--critical,
+[data-theme="cozy"] .fc-row--critical { background: #f5e3dd !important; }
+[data-theme="cozy"] .tier { opacity: 0.75; }
+[data-theme="cozy"] .tier--on { opacity: 1; }
+[data-theme="cozy"] .ind__normal { color: var(--cozy-teal) !important; }
+[data-theme="cozy"] .chart-tip b { color: var(--cozy-ink) !important; }
+
+[data-theme="cozy"] .fc-row__when b,
+[data-theme="cozy"] .slider em,
+[data-theme="cozy"] .twin__forecast-tag { color: var(--cozy-violet) !important; }
+[data-theme="cozy"] .fc-insight,
+[data-theme="cozy"] .cm--on { color: var(--cozy-ink) !important; background: rgba(109, 74, 168, 0.1) !important; }
+[data-theme="cozy"] .symptom--on { color: var(--cozy-warn) !important; }
+
+[data-theme="cozy"] .modal__box { background: #F5F0E7 !important; color: var(--cozy-ink); border-color: #A5B39A !important; }
+[data-theme="cozy"] .field input[type='number'],
+[data-theme="cozy"] .field textarea { background: #fff !important; color: var(--cozy-ink) !important; border-color: #A5B39A !important; }
+[data-theme="cozy"] .twin__xp { color: #7a4d08 !important; }
+[data-theme="cozy"] .t3d__hud span { color: var(--cozy-muted) !important; }
