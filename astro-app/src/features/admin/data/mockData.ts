@@ -33,7 +33,7 @@ export interface CrewMember {
 export const CREW: CrewMember[] = [
   { id: 'a1', name: 'Kowalska', role: 'Commander', code: '012A', sensitivity: 0.8, appearance: { skin: '#f1c7a5', hair: '#6b4226', hairStyle: 'bun' } },
   { id: 'a2', name: 'Nowak', role: 'Pilot', code: '019B', sensitivity: 1.0, appearance: { skin: '#e8b48f', hair: '#2b2b2b', hairStyle: 'short' } },
-  { id: 'a3', name: 'Ito', role: 'Flight Engineer', code: '023C', sensitivity: 1.1, appearance: { skin: '#f0cfa8', hair: '#111111', hairStyle: 'buzz' } },
+  { id: 'a3', name: 'Ito', role: 'Engineer', code: '023C', sensitivity: 1.1, appearance: { skin: '#f0cfa8', hair: '#111111', hairStyle: 'buzz' } },
   { id: 'a4', name: 'Moreau', role: 'Medical Officer', code: '031D', sensitivity: 0.9, appearance: { skin: '#f3d0b5', hair: '#c9a15a', hairStyle: 'long' } },
   {
     id: 'a5',

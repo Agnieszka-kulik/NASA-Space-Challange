@@ -7,6 +7,8 @@ import CrewVitals from './components/CrewVitals'
 import ScenarioSimulator from './components/ScenarioSimulator'
 import AlertQueue from './components/AlertQueue'
 import CommsLog from './components/CommsLog'
+import AstronautProfile from './components/AstronautProfile'
+import { ThemeToggle } from '../../shared/theme/ThemeContext'
 import TrendChart, { ChartLegend, ChartStatusBadge } from './components/TrendChart'
 import { DEFAULT_SELECTED, PARAMETERS, STATUS_LABELS, worstStatus, type ParamDef } from './data/parameters'
 import { CREW, MISSION, generateAstronautSeries, generateEnvironment, latestStatus, type SeriesPoint } from './data/mockData'
@@ -112,15 +114,18 @@ export default function AdminPanel() {
           <div className="admin__mission">
             Mission <b>{MISSION.name}</b> · day <b>{MISSION.currentDay}</b> / {MISSION.lengthDays} · {location.full}
           </div>
-          <button
-            className="admin__btn"
-            onClick={() => {
-              setSeed(Math.floor(Math.random() * 100000))
-              setAcked(new Set())
-            }}
-          >
-            ⟳ Generate new data (mock)
-          </button>
+          <div className="admin__header-actions">
+            <button
+              className="admin__btn"
+              onClick={() => {
+                setSeed(Math.floor(Math.random() * 100000))
+                setAcked(new Set())
+              }}
+            >
+              ⟳ Generate new data (mock)
+            </button>
+            <ThemeToggle />
+          </div>
         </header>
 
         <ScenarioSimulator
@@ -178,11 +183,9 @@ export default function AdminPanel() {
           <section className="panel admin__charts">
             <h2 className="panel__title">
               Astronaut parameters: <span className="accent">{astronaut.name}</span>
-              <small> ({astronaut.role}, {astronaut.code}) — click a crew card or alert to switch</small>
-              <Link to={`/twin/${astronaut.id}`} className="twin-link">
-                🧬 Open digital twin →
-              </Link>
+              <small>click a crew card or alert to switch</small>
             </h2>
+            <AstronautProfile member={astronaut} series={astronautSeries} status={astronautStatus} />
             {astronautStatus !== 'ok' && (
               <div className={`alert alert--${astronautStatus}`}>
                 <b>{STATUS_LABELS[astronautStatus]}</b>

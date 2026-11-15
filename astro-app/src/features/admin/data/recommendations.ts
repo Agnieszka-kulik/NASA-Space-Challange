@@ -54,6 +54,10 @@ export const RECOMMENDATIONS: Record<string, string[]> = {
     'Report headaches or dizziness; increase ventilation fan speed.',
   ],
   cabinTemp: ['Check thermal control loop; adjust module temperature setpoint.'],
+  particulates: [
+    'Vacuum module surfaces and air-vent screens; replace or clean HEPA filters.',
+    'Crew with nasal congestion or itchy eyes: use saline rinse / antihistamine from the medical kit and report symptoms.',
+  ],
   humidity: ['Check condensing heat exchanger; wipe condensation to prevent mould.'],
 }
 

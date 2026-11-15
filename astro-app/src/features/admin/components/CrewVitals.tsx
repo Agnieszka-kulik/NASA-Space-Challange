@@ -24,6 +24,10 @@ export default function CrewVitals({ selectedId, onSelect, trendStatus }: Props)
   const [vitals, setVitals] = useState<Record<string, LiveVitals>>(() =>
     Object.fromEntries(CREW.map((m) => [m.id, generateLiveVitals(m)])),
   )
+  // ECG speed is fixed per astronaut (changing it every refresh made the trace jump)
+  const [ecgSpeed] = useState<Record<string, number>>(() =>
+    Object.fromEntries(CREW.map((m) => [m.id, (60 / generateLiveVitals(m).heartRate) * 4])),
+  )
 
   // "Live" refresh every 2 seconds (mock)
   useEffect(() => {
@@ -59,7 +63,7 @@ export default function CrewVitals({ selectedId, onSelect, trendStatus }: Props)
               </div>
 
               <svg className="crew__ecg" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true">
-                <path d={ecgPath} style={{ animationDuration: `${(60 / v.heartRate) * 4}s` }} />
+                <path d={ecgPath} style={{ animationDuration: `${ecgSpeed[m.id]}s` }} />
               </svg>
 
               <div className="crew__stats">

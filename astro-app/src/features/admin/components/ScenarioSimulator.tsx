@@ -110,7 +110,7 @@ export default function ScenarioSimulator(props: Props) {
             {activeLoc!.name} · {active!.duration} days · Day {inspectedDay}: {criticalCount} crit / {warningCount} warn
           </span>
         ) : (
-          <span className="sim__status">○ Idle — expand to configure & run a what-if scenario</span>
+          <span className="sim__spacer" />
         )}
         <span className="sim__chevron">{open ? '▴ Collapse' : '▾ Expand'}</span>
       </button>

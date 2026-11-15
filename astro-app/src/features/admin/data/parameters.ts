@@ -44,6 +44,7 @@ export const PARAMETERS: ParamDef[] = [
   { id: 'radiation', label: 'Radiation dose', unit: 'mSv/d', category: 'environment', baseline: 0.45, drift: 0.15, noise: 0.06, decimals: 2, thresholds: { warning: 3.0, critical: 6.0, direction: 'high' }, info: 'Daily dose depends on location: ~0.5 mSv/d on the ISS, ~1.4 on the Moon, ~1.8 in Mars transit. Solar particle events can spike it far higher.' },
   { id: 'co2', label: 'CO₂ concentration', unit: 'ppm', category: 'environment', baseline: 2400, drift: 500, noise: 180, decimals: 0, thresholds: { warning: 3500, critical: 4500, direction: 'high' } },
   { id: 'cabinTemp', label: 'Module temperature', unit: '°C', category: 'environment', baseline: 22, drift: 1, noise: 0.5, decimals: 1, thresholds: { warning: 25, critical: 27, direction: 'high' } },
+  { id: 'particulates', label: 'Airborne dust (PM2.5)', unit: 'µg/m³', category: 'environment', baseline: 12, drift: 9, noise: 2.5, decimals: 0, thresholds: { warning: 25, critical: 35, direction: 'high' }, info: 'In microgravity dust, lint and skin flakes never settle – they float and are easily inhaled. ISS crews report dust allergies, nasal congestion and eye irritation; cargo opening and exercise raise the particle load.' },
   { id: 'humidity', label: 'Humidity', unit: '%', category: 'environment', baseline: 45, drift: 5, noise: 3, decimals: 0, thresholds: { warning: 60, critical: 70, direction: 'high' } },
 ]
 
@@ -53,7 +54,7 @@ export const CATEGORY_LABELS: Record<ParamCategory, string> = {
 }
 
 // the 6 indicators named in the challenge come first: BP, HR, blood sugar, temperature, sleep, mood
-export const DEFAULT_SELECTED = ['bloodPressure', 'heartRate', 'glucose', 'temperature', 'sleep', 'mood', 'stress', 'boneDensity', 'noise', 'radiation', 'co2']
+export const DEFAULT_SELECTED = ['bloodPressure', 'heartRate', 'glucose', 'temperature', 'sleep', 'mood', 'stress', 'boneDensity', 'noise', 'radiation', 'co2', 'particulates']
 
 export const getParam = (id: string) => PARAMETERS.find((p) => p.id === id)!
 

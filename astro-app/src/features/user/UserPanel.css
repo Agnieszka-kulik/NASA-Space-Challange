@@ -2023,4 +2023,35 @@
       justify-items: center;
       text-align: center;
     }
-  }
+  }
+/* ---------- My health widget (live vitals + mini digital twin) ---------- */
+.my-health-card {
+  --accent: #00f5d4;
+  --text-muted: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.my-health-card__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.my-health-card__hint {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+.my-health-card .profile {
+  margin-bottom: 0;
+  grid-template-columns: minmax(0, 1fr) 140px;
+}
+[data-theme="cozy"] .my-health-card {
+  --accent: #B98970;
+  --text-muted: #6E6C5F;
+}
+.my-health-card .mini-twin__cta {
+  white-space: nowrap;
+  font-size: 0.66rem;
+  padding: 0.2rem 0.45rem;
+}

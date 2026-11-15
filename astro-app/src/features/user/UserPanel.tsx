@@ -6,7 +6,8 @@ import PixelDuck, { DUCK_SPRITES, type DuckPresetId } from './components/PixelDu
 import TodoAccordion, { type TodoSection } from './components/TodoAccordion'
 import ShopSubpage, { type RewardItem } from './components/ShopSubpage'
 import StatsSubpage, { type MoodLogEntry } from './components/StatsSubpage'
-import GuideSubpage, { EXAMINATION_GUIDES } from './components/GuideSubpage'
+import GuideSubpage from './components/GuideSubpage'
+import MyHealthWidget from './components/MyHealthWidget'
 import DuckChatSubpage from './components/DuckChatSubpage'
 import CognitiveGamesSubpage from './components/CognitiveGamesSubpage'
 import './UserPanel.css'
@@ -521,15 +522,6 @@ export default function UserPanel() {
           </div>
 
           <div className="hud-topbar__right">
-            <Link to="/user" className="user-nav-link">
-              Dashboard
-            </Link>
-            <Link to="/user/games" className="user-nav-link">
-              🕹️ Games
-            </Link>
-            <Link to="/user/chat" className="user-nav-link">
-              💬 Duck AI Chat
-            </Link>
             <Link to="/user/guide" className="user-nav-link">
               📖 Task Guide
             </Link>
@@ -620,40 +612,8 @@ export default function UserPanel() {
                       </div>
                     </div>
 
-                    {/* Short panel below duck: How to perform measurements & tasks */}
-                    <div className="hud-card guide-preview-card">
-                      <div className="guide-preview-card__top">
-                        <div>
-                          <span className="hud-section-title">
-                            📖 HOW TO PERFORM MEASUREMENTS & TASKS?
-                          </span>
-                          <p className="guide-preview-card__sub">
-                            Pick an examination to view step-by-step instructions, equipment, and healthy ranges:
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          className="guide-preview-card__open-btn"
-                          onClick={() => navigate('/user/guide')}
-                        >
-                          Full Knowledge Base →
-                        </button>
-                      </div>
-
-                      <div className="guide-preview-chips">
-                        {EXAMINATION_GUIDES.map((g) => (
-                          <button
-                            key={g.id}
-                            type="button"
-                            className="guide-chip-btn"
-                            onClick={() => navigate(`/user/guide?topic=${g.id}`)}
-                          >
-                            <span>{g.icon}</span>
-                            <span>{g.title}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    {/* My health: live vitals + mini digital twin */}
+                    <MyHealthWidget />
                   </section>
 
                   {/* RIGHT COLUMN: AI Duck Chatbot -> Top 3 Leaderboard -> Mood Tracker -> Hydration -> Rewards Shop */}
