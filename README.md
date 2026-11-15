@@ -1,4 +1,9 @@
-# What It Does & How It Works 
+# Project Details
+
+## Project Demonstration
+https://canva.link/metsgtjba9smyxm
+
+## What It Does & How It Works 
 
 Our platform is a health-monitoring ecosystem designed for astronauts on long-duration space missions. It works through four integrated pillars:
 
@@ -10,7 +15,7 @@ Our platform is a health-monitoring ecosystem designed for astronauts on long-du
 
 - Crew Analytics & Scenario Simulator: A dashboard that aggregates crew health trends and features a predictive simulator that models how specific spaceflight hazards (e.g., Solar particle event,High-intensity EVA week etc.) impact biometrics over time.
 
-# Key Benefits & Intended Impact
+## Key Benefits & Intended Impact
 
 - Overcoming Routine Fatigue: Regular medical checks are vital for survival in space, yet repetitive clinical procedures quickly become tedious, leading to skipped measurements. By turning daily checkups into an engaging experience, our app ensures consistent data logging.
 
@@ -18,7 +23,7 @@ Our platform is a health-monitoring ecosystem designed for astronauts on long-du
 
 - Intended Impact: Ultimately, we aim to protect astronaut health and mission success by transforming medical compliance from a chore into an intuitive, proactive, and emotionally supportive daily habit.
 
-# Creativity & Innovation
+## Creativity & Innovation
 
 Unlike traditional, medical dashboards that feel intimidating or clinical, we fused space medicine with playful gamification:
 
@@ -26,7 +31,7 @@ Unlike traditional, medical dashboards that feel intimidating or clinical, we fu
 
 - Engaging Incentives: Completing health tasks earns points that unlock items in an in-app shop, drives friendly competition via crew leaderboards.
 
-# Tools, Languages, Hardware & Software Used
+## Tools, Languages, Hardware & Software Used
 
 - Languages: TypeScript, JavaScript, HTML, CSS
 
