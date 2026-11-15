@@ -1,85 +1,37 @@
-# NASA-Space-Challange
-Repo na zawody NASA Space Challange
+# What It Does & How It Works 
 
-Prezentacja
+Our platform is a health-monitoring ecosystem designed for astronauts on long-duration space missions. It works through four integrated pillars:
 
-1. Wstęp, nazwa teamu, wybrane wyzwanie
+- Automated & Manual Data Collection: Vital signs (such as heart rate, saturation,sleep, radiation, noise) are continuously synced from smartwatches and space station sensors, while manual inputs (such as blood pressure, temperature, vision and hearing tests) are supported by timely smart reminders.
 
-DUCK AGH, Create Health Monitoring Software for Astronauts on Space Missions
+- Interactive Digital Twin: A clickable 3D/2D anatomical model visualizes the astronaut’s real-time health status using intuitive color coding. Clicking any body part reveals localized metrics, step-by-step self-examination guides, and NASA-backed intervention protocols indicating when a metric requires attention.
 
-2. Napotkany problem oraz uzasadnienie wybrania powyższego wyzwania, aspekty innowacyjne w naszej aplikacji
+- Offline Local AI Assistant: Powered by NASA Human Research Program data, our locally hosted AI chatbot provides immediate physical and psychological guidance. Because it runs completely offline, it eliminates Earth-to-space communication latency.
 
-Monotonność robienia pomiarów, mała atrakcyjność, uciążliwość, zapominanie o pomiarach, problem z prawidłową analizą wszystkich pomiarów biomedycznych, 
-- obniżenie czujności
-- mechaniczne pomiary lub z opóźnieniem
-- zmęczenie rutyną --> spadek  morali, irytacja z powodu rutynowych zadań
-- rutynowość --> problem pojawia się w środkowej i końcowej fazie eksperymentu/misji
-- ubogość zewnętrznego środowiska sensorycznego obniża poziom pobudzenia poznawczego --> bezpośredni spadek wydajności oraz błędów w rutynowych zadaniach --> zaangażowanie bodźców wizualnych w codziennych zadaniach https://ntrs.nasa.gov/api/citations/20120002722/downloads/20120002722.pdf
-- brak szybiej informacji zwrotnej żle wpływa na realizację zadania, staje się czysto formalne (brak zaangażowania)
+- Crew Analytics & Scenario Simulator: A dashboard that aggregates crew health trends and features a predictive simulator that models how specific spaceflight hazards (e.g., Solar particle event,High-intensity EVA week etc.) impact biometrics over time.
 
-Wykorzystanie gryfikacji oraz realnych nagród za wykonywanie rutynowych czynności
-- zwiększenie reguralności
-- biofeedback - wizualizacja trendów własnego organizmu oraz poczucie sensu
-- pisanie własnego dziennika pozwoliło na poczucie sensu oraz zachowania perspektywy nad wykonywaną pracą (realny, ciągły progres) oraz pozwoliło na uzyskanie lepszej relacji z innymi https://ntrs.nasa.gov/api/citations/20100026549/downloads/20100026549.pdf
-- zastosowanie gier, feedback, śledzenie trendów, serii i celów zespołowych https://www.researchgate.net/publication/396662408_Game_Mechanics_in_Space_Leveraging_Gamification_to_Support_Crew_Performance_and_Resilience
-- zamienia suchy obowiązek w pętlę natychmiastowej informacji zwrotnej.
+# Key Benefits & Intended Impact
 
-3. Profil aplikacji widzany przez urzytkownika
-- statystyka
-- TODO lista
-- stan samopoczucia i nawodnienia
-- poziom stresu
-- okna alarmowe, np. wysoki współczynnik stresu lub hałasu, należy zmienić miejsce wykonywania czynności
+- Overcoming Routine Fatigue: Regular medical checks are vital for survival in space, yet repetitive clinical procedures quickly become tedious, leading to skipped measurements. By turning daily checkups into an engaging experience, our app ensures consistent data logging.
 
-4. Profil aplikacji widzany przez administratora
-- porównianie wszystkich uczestników misji
-- analiza warunków środowiskowych
-- aktualne parametry życiowe urzytkowników
+- True Crew Autonomy: As missions move farther from Earth, real-time ground support becomes impossible due to signal delays. Our platform equips astronauts to diagnose issues, prevent critical conditions, and manage mental stress independently.
 
-5. Anaiza psychicznego stanu astronauta i czasu reakcji
-Gry na reakcję oraz trening oka z wykorzystaniem eye tracking(zmiejszanie zmęczenia oka przy długotrwałym skupieniu i bezruchu oka)
+- Intended Impact: Ultimately, we aim to protect astronaut health and mission success by transforming medical compliance from a chore into an intuitive, proactive, and emotionally supportive daily habit.
 
+# Creativity & Innovation
 
-6. Stowrzenie digital twin
-wykorzystanie modeli uczenia maszynowego do przewidywania akywności fizycznej oraz czasu regeneracji; model do wyznaczenia poziomu stresu, którym obarczony jest astronauta oraz wpływu hałasu na poziom skupienia i koncentracji
+Unlike traditional, medical dashboards that feel intimidating or clinical, we fused space medicine with playful gamification:
 
-7. Kierunek rozwoju aplikacji, nowe wyzwania
+- Dynamic Duck Avatar: Every astronaut has a virtual duck companion whose appearance and mood evolve dynamically based on how consistently they log measurements and maintain healthy metrics.
 
+- Engaging Incentives: Completing health tasks earns points that unlock items in an in-app shop, drives friendly competition via crew leaderboards.
 
--------------------------------------------
--------------------------------------------
+# Tools, Languages, Hardware & Software Used
 
+- Languages: TypeScript, JavaScript, HTML, CSS
 
+- Frameworks & Libraries: React, Three.js, WebLLM (@mlc-ai/web-llm), Recharts, HTML Canvas, Web Audio API 
 
-Nasze wyzwanie główne aspekty:
-- ekspozycja na czynniki środowiskowe (promieniowanie, izolacja i uwięzienie, zmienne pole grawitacyjne) --> niesprzyjające warunki
-- narażenie na pogorszenie stanu zdrowia (zmiany systemu imulogicznego, utrata gęstości kości, problemy z układem krążenia, problemy ze zdrowniem psychicznym/behawioralne)
-- obarczenie austronautów samodzielnym wykonywaniem zadań i samodzielne wykrywanie zmian zdrowotnych w swoim organizmie
-- podejmowanie przez astronoma decyzji natychmiastowych dotyczących własnego zdrowia oraz podejmowanie działań
+- Tools & Platforms: Vite, WebGPU, WebGL 
 
-
-Przydatne wskaźniki stanu zdrowia:
-- ciśnienie krwi
-- tętno
-- poziom cukru
-- temperatura ciała
-- liczba godzin snu
-- nastrój
-
-
-Cel zadania:
-- pomoc astronaucie w ocenie stanu zdrowia --> wizualizacja danych oraz dostarczenie wskazówek dot. leczenia i porawienia stanu zdrowia
-- zbieranie danych 
-- wykorzystanie baz danych do oceny stanu zdrowia oraz do zapobiegania wystąpienia stanu krytycznego
-- przejrzysta prezentacja danych programowych i prognoz
-
-
-Cele dodatkowe:
-- zapewnienie informacji stanu zdrowia w różnych środowiskach
-- zachęcenie do wykonywania pomiarów
-- grywalizacja
-- dynamiczne wykresy
-- kodowanie kolorami
-- dodanie wyłumaczenia i instrukcji dotyczących pomiarów, wskaźników zdrowia i zagrożeń
-
-
+- Hardware & Simulated Systems: Simulated Smartwatch & Cabin Sensors, Pixel Companion Display, NASA ISS Medical Kit & ARED Countermeasure Telemetry  
